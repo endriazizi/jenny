@@ -1,14 +1,14 @@
 ---
 import Legal from '../components/Legal.astro';
 import { SITE, fullAddress } from '../data/site';
-const owner = SITE.legalName ?? '[titolare da completare]';
+const owner = SITE.legalName ?? SITE.name;
 const addr = fullAddress();
 ---
 <Legal title="Privacy · Jenny Nails Studio" description="Informativa sul trattamento dei dati personali del sito di Jenny Nails Studio." heading="Informativa privacy" updated="26 ottobre 2026">
   <p>Questa informativa spiega come vengono trattati i dati personali di chi visita questo sito, ai sensi del Regolamento UE 2016/679 (GDPR).</p>
 
   <h2>Titolare del trattamento</h2>
-  <p>{owner}{SITE.vat && `, P.IVA ${SITE.vat}`}{addr && `, ${addr}`}.{SITE.email && <> Email: <a href={`mailto:${SITE.email}`}>{SITE.email}</a>.</>}</p>
+  <p data-titolare={SITE.legalName ? undefined : 'mancante'}>{owner}{SITE.vat && `, P.IVA ${SITE.vat}`}{addr && `, ${addr}`}.{SITE.email && <> Email: <a href={`mailto:${SITE.email}`}>{SITE.email}</a>.</>}</p>
 
   <h2>Quali dati raccoglie il sito</h2>
   <p>Il sito non ha moduli che salvano dati, non richiede registrazione e non usa strumenti di statistica o pubblicità.</p>

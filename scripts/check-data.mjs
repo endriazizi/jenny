@@ -9,7 +9,7 @@ const errors = [];
 
 if (home.includes('Anteprima grafica')) errors.push('build di anteprima (PUBLIC_ANTEPRIMA=1): non si pubblica');
 if (!/href="(tel:|https:\/\/wa\.me\/)/.test(home)) errors.push('manca telefono o WhatsApp (src/data/site.ts)');
-if (privacy.includes('[titolare da completare]')) errors.push('manca il titolare in privacy (legalName in src/data/site.ts)');
+if (privacy.includes('data-titolare="mancante"')) errors.push('manca il titolare in privacy (legalName in src/data/site.ts)');
 
 // Su GitHub Actions scrive ready=true/false: la build resta verde, ma senza dati non si pubblica.
 const out = process.env.GITHUB_OUTPUT;
