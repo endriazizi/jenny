@@ -32,7 +32,7 @@ Regola: un dato non confermato resta `null` e non compare. Niente prezzi, orari 
 
 `push su main` → GitHub Actions: `astro check` → build → `scripts/check-data.mjs` → ramo `deploy` → Plesk Git → `httpdocs`.
 
-Il controllo dati **blocca la pubblicazione** finché mancano telefono o WhatsApp e il titolare per la privacy. Il dominio si imposta con la variabile `SITE_URL` (GitHub → Settings → Secrets and variables → Actions → Variables); senza, si usa quello provvisorio in `astro.config.mjs`.
+Il controllo dati **blocca la pubblicazione** finché mancano telefono o WhatsApp e il titolare per la privacy. Il dominio si imposta con la variabile `SITE_URL` (GitHub → Settings → Secrets and variables → Actions → Variables); senza, si usa `https://jenny.milloshi.it` (in `astro.config.mjs`).
 
 Su Plesk: Siti web e domini → dominio → Git → Aggiungi archivio → `git@github.com:endriazizi/jenny-nails-studio.git`, ramo `deploy`, cartella `httpdocs`, senza azioni di implementazione. Deploy key dedicata (una per repository) e webhook GitHub sul push, come in `enea-sito/GUIDA.md`.
 

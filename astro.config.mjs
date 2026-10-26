@@ -3,7 +3,7 @@ import sitemap from '@astrojs/sitemap';
 
 // Dominio del sito: impostalo con la variabile SITE_URL (GitHub → Settings → Variables)
 // quando il dominio è deciso. Senza, la build usa l'indirizzo provvisorio qui sotto.
-const site = process.env.SITE_URL || 'https://jennynails.milloshi.it';
+const site = process.env.SITE_URL || 'https://jenny.milloshi.it';
 
 export default defineConfig({
   site,
