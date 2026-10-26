@@ -1,4 +1,4 @@
-// Blocca la pubblicazione se mancano i dati minimi del salone (controlla il sito compilato in dist/).
+// Blocca la pubblicazione (senza far fallire la build) se mancano i dati minimi del salone (controlla il sito compilato in dist/).
 // Non inventiamo dati: finché non ci sono, il sito si compila ma non va online.
 import fs from 'node:fs';
 
@@ -11,8 +11,12 @@ if (home.includes('Anteprima grafica')) errors.push('build di anteprima (PUBLIC_
 if (!/href="(tel:|https:\/\/wa\.me\/)/.test(home)) errors.push('manca telefono o WhatsApp (src/data/site.ts)');
 if (privacy.includes('[titolare da completare]')) errors.push('manca il titolare in privacy (legalName in src/data/site.ts)');
 
+// Su GitHub Actions scrive ready=true/false: la build resta verde, ma senza dati non si pubblica.
+const out = process.env.GITHUB_OUTPUT;
+if (out) fs.appendFileSync(out, `ready=${errors.length ? 'false' : 'true'}\n`);
 if (errors.length) {
-  for (const e of errors) console.error(`::error::${e}`);
-  process.exit(1);
+  for (const e of errors) console.log(`::warning::Sito NON pubblicato: ${e}`);
+  if (!out) process.exit(1);
+} else {
+  console.log('Dati minimi presenti: si può pubblicare.');
 }
-console.log('Dati minimi presenti: si può pubblicare.');

@@ -38,12 +38,10 @@ jobs:
 
       - name: Controllo dati minimi
         id: ready
-        run: |
-          node scripts/check-data.mjs
-          echo "ok=true" >> "$GITHUB_OUTPUT"
+        run: node scripts/check-data.mjs
 
       - name: Pubblica dist sul ramo deploy
-        if: steps.ready.outputs.ok == 'true'
+        if: steps.ready.outputs.ready == 'true'
         run: |
           REPO="https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
           rm -rf /tmp/deploy
