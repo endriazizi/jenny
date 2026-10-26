@@ -1,0 +1,7 @@
+---
+/** Icona Lucide in linea. Decorativa (aria-hidden): il testo accanto resta l'etichetta. */
+import { ICONS, type IconName } from '../data/icons';
+interface Props { name: IconName; size?: number; class?: string; stroke?: number }
+const { name, size = 22, class: cls, stroke = 1.75 } = Astro.props;
+---
+<svg class:list={['icon', cls]} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width={stroke} stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" set:html={ICONS[name]} />

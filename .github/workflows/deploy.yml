@@ -1,0 +1,65 @@
+# Build Astro e pubblicazione del sito compilato sul ramo "deploy" (come enea-sito).
+# Plesk (estensione Git) scarica il ramo "deploy" nella cartella httpdocs del dominio.
+name: Build e deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: deploy
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      # Dominio definitivo: GitHub → Settings → Secrets and variables → Actions → Variables → SITE_URL
+      SITE_URL: ${{ vars.SITE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Installa dipendenze
+        run: npm install --no-audit --no-fund
+
+      - name: Controllo tipi
+        run: npx astro check
+
+      - name: Build
+        run: npm run build
+
+      - name: Controllo dati minimi
+        id: ready
+        run: |
+          node scripts/check-data.mjs
+          echo "ok=true" >> "$GITHUB_OUTPUT"
+
+      - name: Pubblica dist sul ramo deploy
+        if: steps.ready.outputs.ok == 'true'
+        run: |
+          REPO="https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
+          rm -rf /tmp/deploy
+          if git ls-remote --exit-code --heads "$REPO" deploy >/dev/null; then
+            git clone -q --depth 1 --branch deploy "$REPO" /tmp/deploy
+          else
+            mkdir -p /tmp/deploy && git -C /tmp/deploy init -q -b deploy && git -C /tmp/deploy remote add origin "$REPO"
+          fi
+          rsync -a --delete --exclude='.git/' dist/ /tmp/deploy/
+          cd /tmp/deploy
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Nessuna modifica al sito: niente da pubblicare."
+          else
+            git commit -q -m "deploy ${GITHUB_SHA::7} (build ${GITHUB_RUN_NUMBER})"
+            git push -q origin deploy
+          fi

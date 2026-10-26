@@ -1,0 +1,17 @@
+---
+/** Logo tipografico, finché non c'è un logo vero (mettilo in public/logo.svg e sostituisci qui). */
+interface Props { size?: 'sm' | 'lg' }
+const { size = 'sm' } = Astro.props;
+---
+<span class:list={['wm', size]}>
+  <span class="j">Jenny</span>
+  <span class="s">Nails Studio</span>
+</span>
+
+<style>
+  .wm { display: inline-flex; flex-direction: column; line-height: 1; color: var(--inchiostro); }
+  .j { font-family: var(--serif); font-style: italic; font-weight: 500; font-size: 30px; letter-spacing: -0.02em; }
+  .s { font-size: 10.5px; font-weight: 700; letter-spacing: 0.32em; text-transform: uppercase; color: var(--malva); margin-top: 3px; padding-left: 2px; }
+  .lg .j { font-size: 40px; }
+  .lg .s { font-size: 12px; }
+</style>

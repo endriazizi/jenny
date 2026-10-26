@@ -1,0 +1,22 @@
+---
+import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
+import { BOOK_HREF } from '../data/site';
+---
+<Base title="Pagina non trovata · Jenny Nails Studio" noindex>
+  <section class="wrap nf">
+    <p class="eyebrow">Errore 404</p>
+    <h1>Questa pagina <em>non c’è</em>.</h1>
+    <p class="muted">Forse cercavi una di queste:</p>
+    <div class="ctas">
+      <a class="btn btn-primary" href={BOOK_HREF}><Icon name="calendar-heart" />Prenota</a>
+      <a class="btn btn-ghost" href="/trattamenti/"><Icon name="sparkles" />Trattamenti</a>
+      <a class="btn btn-ghost" href="/">Home</a>
+    </div>
+  </section>
+</Base>
+<style>
+  .nf { padding-block: 96px; display: flex; flex-direction: column; gap: 18px; }
+  h1 { font-size: clamp(36px, 6vw, 60px); }
+  .ctas { display: flex; flex-wrap: wrap; gap: 12px; }
+</style>

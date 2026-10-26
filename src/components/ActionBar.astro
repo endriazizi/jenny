@@ -1,0 +1,41 @@
+---
+import { SITE, WHATSAPP, waLink, WA_HELLO, BOOK_HREF, directionsHref } from '../data/site';
+import Icon from './Icon.astro';
+const wa = waLink(WA_HELLO);
+const dir = directionsHref();
+const items = [
+  SITE.phone && { href: `tel:${SITE.phone.tel}`, icon: 'phone', label: 'Chiama' },
+  wa && { href: wa, icon: 'message-circle', label: 'WhatsApp', cls: 'wa', ext: true },
+  !WHATSAPP && { href: BOOK_HREF, icon: 'calendar-heart', label: 'Prenota', cls: 'main' },
+  { href: '/trattamenti/', icon: 'sparkles', label: 'Trattamenti' },
+  dir && { href: dir, icon: 'map-pin', label: 'Dove siamo', ext: true },
+].filter(Boolean) as { href: string; icon: 'phone'; label: string; cls?: string; ext?: boolean }[];
+// Con WhatsApp attivo, WhatsApp è l'azione principale.
+if (WHATSAPP) items.find((i) => i.cls === 'wa')!.cls = 'main wa';
+---
+<nav class="bar" aria-label="Azioni rapide" style={`--cols:${items.length}`}>
+  {items.map((i) => (
+    <a href={i.href} class={i.cls} rel={i.ext ? 'noopener' : undefined}><Icon name={i.icon} />{i.label}</a>
+  ))}
+</nav>
+
+<style>
+  .bar { display: none; }
+  @media (max-width: 760px) {
+    .bar {
+      display: grid; grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr)); gap: 4px;
+      position: fixed; left: 10px; right: 10px; bottom: calc(10px + env(safe-area-inset-bottom));
+      z-index: 30; background: var(--inchiostro); border-radius: 22px; padding: 6px;
+      box-shadow: 0 8px 28px rgba(45, 34, 38, .28);
+    }
+    .bar a {
+      min-height: 58px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 3px; color: var(--avorio); text-decoration: none; font-size: 12px; font-weight: 700; border-radius: 16px;
+      white-space: nowrap;
+    }
+    .bar a :global(.icon) { color: var(--rosa); }
+    .bar a.main { background: var(--malva); color: var(--bianco); }
+    .bar a.main :global(.icon) { color: var(--bianco); }
+  }
+  @media (max-width: 360px) { .bar a { font-size: 11px; } }
+</style>

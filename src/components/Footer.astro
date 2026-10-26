@@ -1,0 +1,62 @@
+---
+import Wordmark from './Wordmark.astro';
+import Icon from './Icon.astro';
+import { SITE, WHATSAPP, waLink, WA_HELLO, fullAddress } from '../data/site';
+import { BUILD_VERSION, BUILD_SHA } from '../data/build';
+const year = new Date().getFullYear();
+const wa = waLink(WA_HELLO);
+const addr = fullAddress();
+---
+<footer class="ftr">
+  <div class="wrap grid">
+    <div>
+      <a href="/" class="brand" aria-label="Jenny Nails Studio, home"><Wordmark size="lg" /></a>
+      <p class="tag">{SITE.tagline}</p>
+    </div>
+    {(addr || SITE.phone || WHATSAPP || SITE.email || SITE.instagram) && (
+      <div>
+        <p class="h">Contatti</p>
+        {addr && <p class="ic"><Icon name="map-pin" size={18} /><span>{addr}</span></p>}
+        {SITE.phone && <p class="ic"><Icon name="phone" size={18} /><a href={`tel:${SITE.phone.tel}`}>{SITE.phone.display}</a></p>}
+        {wa && <p class="ic"><Icon name="message-circle" size={18} /><a href={wa} rel="noopener">Scrivi su WhatsApp</a></p>}
+        {SITE.email && <p class="ic"><Icon name="mail" size={18} /><a href={`mailto:${SITE.email}`}>{SITE.email}</a></p>}
+        {SITE.instagram && <p class="ic"><Icon name="instagram" size={18} /><a href={SITE.instagram} rel="noopener">Instagram</a></p>}
+      </div>
+    )}
+    <div>
+      <p class="h">Il sito</p>
+      <p><a href="/trattamenti/">Trattamenti</a></p>
+      <p><a href="/contatti/">Contatti e orari</a></p>
+      <p><a href="/privacy/">Privacy</a></p>
+      <p><a href="/cookie-policy/">Cookie policy</a></p>
+    </div>
+  </div>
+  <div class="wrap legal">
+    <p>© {year} {SITE.legalName ?? SITE.name}{SITE.vat && ` · P.IVA ${SITE.vat}`}</p>
+    <p class="credit">
+      {SITE.credits.href
+        ? <a href={SITE.credits.href} rel="noopener">{SITE.credits.label}</a>
+        : <span>{SITE.credits.label}</span>}
+      <span aria-hidden="true">·</span>
+      <span>{SITE.credits.author}</span>
+      <span aria-hidden="true">·</span>
+      <a class="build" href="/version.json" title={BUILD_SHA ? `Commit ${BUILD_SHA}` : 'Versione del sito'}>Build {BUILD_VERSION}</a>
+    </p>
+  </div>
+</footer>
+
+<style>
+  .ftr { background: var(--cipria); color: var(--testo-2); font-size: 15px; padding-top: 56px; border-top: 1px solid var(--bordo); }
+  .ftr a { color: var(--inchiostro); text-decoration: none; }
+  .ftr a:hover { color: var(--malva); text-decoration: underline; }
+  .brand { display: inline-flex; margin-bottom: 14px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 32px; }
+  .grid p + p { margin-top: 6px; }
+  .ic { display: flex; gap: 10px; align-items: flex-start; }
+  .ic :global(.icon) { color: var(--malva); flex: none; margin-top: 3px; }
+  .h { color: var(--oro-testo); font-weight: 700; font-size: 13px; letter-spacing: .12em; text-transform: uppercase; margin-bottom: 10px; }
+  .legal { border-top: 1px solid var(--cipria-2); margin-top: 40px; padding-block: 20px; font-size: 13px; display: flex; flex-direction: column; gap: 6px; }
+  .credit { display: flex; flex-wrap: wrap; gap: 4px 8px; font-size: 12.5px; }
+  .ftr .credit a { color: var(--testo-2); }
+  .credit .build { font-variant-numeric: tabular-nums; }
+</style>

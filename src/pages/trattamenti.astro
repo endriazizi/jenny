@@ -1,0 +1,89 @@
+---
+import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
+import { SITE, waLink, BOOK_HREF } from '../data/site';
+import { TRATTAMENTI, waTextFor } from '../data/trattamenti';
+
+const site = Astro.site!;
+const breadcrumb = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Home', item: `${site.origin}/` },
+    { '@type': 'ListItem', position: 2, name: 'Trattamenti', item: `${site.origin}/trattamenti/` },
+  ],
+};
+const anyPrice = TRATTAMENTI.some((t) => t.price);
+---
+<Base
+  title="Trattamenti · Jenny Nails Studio"
+  description="Manicure, semipermanente, ricostruzione, refill, nail art e pedicure estetico da Jenny Nails Studio. Scopri i trattamenti e prenota su appuntamento."
+  schema={[breadcrumb]}
+>
+  <section class="wrap top">
+    <nav class="crumb" aria-label="Percorso"><a href="/">Home</a><span aria-hidden="true">/</span><span aria-current="page">Trattamenti</span></nav>
+    <p class="eyebrow">Trattamenti</p>
+    <h1 class="title-lg">Scegli da dove <em>partire</em></h1>
+    <p class="muted lead">
+      Ogni trattamento si prenota su appuntamento.
+      {anyPrice ? ' I prezzi indicati sono di partenza: per ricostruzioni e decorazioni dipendono dal lavoro.' : ' Per durata e prezzo chiedici quando prenoti: dipendono dalle tue unghie e dal risultato che vuoi.'}
+    </p>
+  </section>
+
+  <section class="wrap list">
+    {TRATTAMENTI.map((t) => {
+      const wa = waLink(waTextFor(t));
+      const href = wa ?? BOOK_HREF;
+      return (
+        <article class="card row" id={t.slug}>
+          <span class="ticon"><Icon name={t.icon} size={26} /></span>
+          <div class="body">
+            <h2>{t.name}</h2>
+            <p class="muted">{t.text}</p>
+            {(t.price || t.duration) && (
+              <p class="meta">
+                {t.price && <span><strong>{t.price}</strong></span>}
+                {t.duration && <span><Icon name="clock" size={16} />{t.duration}</span>}
+              </p>
+            )}
+          </div>
+          <a class={wa ? 'btn btn-wa' : 'btn btn-ghost'} href={href} rel={href.startsWith('http') ? 'noopener' : undefined}>
+            <Icon name={wa ? 'message-circle' : 'calendar-heart'} size={20} />Prenota<span class="sr"> {t.name}</span>
+          </a>
+        </article>
+      );
+    })}
+  </section>
+
+  <section class="wrap note">
+    <p class="muted"><Icon name="info" size={18} />Il pedicure è un trattamento estetico. Per problemi alle unghie o alla pelle dei piedi rivolgiti a un podologo o al medico.</p>
+    {SITE.phone && <p class="muted">Domande? Chiama il <a href={`tel:${SITE.phone.tel}`}>{SITE.phone.display}</a>.</p>}
+  </section>
+</Base>
+
+<style>
+  .top { padding-block: 48px 32px; display: flex; flex-direction: column; gap: 14px; }
+  .crumb { display: flex; gap: 8px; font-size: 14px; color: var(--testo-2); }
+  .crumb a { color: var(--testo-2); }
+  .lead { max-width: 60ch; }
+  .list { display: flex; flex-direction: column; gap: 14px; padding-bottom: 32px; }
+  .row { display: grid; grid-template-columns: auto 1fr auto; gap: 20px; align-items: center; padding: 24px 28px; scroll-margin-top: 96px; }
+  .row:target { border-color: var(--malva); box-shadow: 0 0 0 3px var(--rosa); }
+  .ticon { width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; background: var(--cipria); color: var(--malva); }
+  .body { display: flex; flex-direction: column; gap: 6px; }
+  h2 { font-size: 26px; }
+  .meta { display: flex; gap: 16px; flex-wrap: wrap; color: var(--malva); font-size: 15px; }
+  .meta span { display: inline-flex; gap: 6px; align-items: center; }
+  .note { padding-bottom: 88px; display: flex; flex-direction: column; gap: 8px; font-size: 15px; }
+  .note p { display: flex; gap: 8px; align-items: flex-start; }
+  .note :global(.icon) { flex: none; margin-top: 3px; color: var(--malva); }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  @media (max-width: 760px) {
+    .top { padding-block: 32px 24px; }
+    .row { grid-template-columns: auto 1fr; padding: 20px; gap: 14px 16px; align-items: start; }
+    .ticon { width: 44px; height: 44px; }
+    .row .btn { grid-column: 1 / -1; }
+    h2 { font-size: 23px; }
+    .note { padding-bottom: 48px; }
+  }
+</style>

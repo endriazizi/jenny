@@ -1,0 +1,21 @@
+---
+import Base from '../layouts/Base.astro';
+interface Props { title: string; description: string; heading: string; updated: string }
+const { title, description, heading, updated } = Astro.props;
+---
+<Base title={title} description={description}>
+  <article class="wrap legal">
+    <p class="eyebrow">Informazioni legali</p>
+    <h1 class="title-lg">{heading}</h1>
+    <p class="muted upd">Ultimo aggiornamento: {updated}</p>
+    <slot />
+  </article>
+</Base>
+<style>
+  .legal { max-width: 760px; padding-block: 48px 88px; }
+  .upd { margin: 10px 0 32px; font-size: 14px; }
+  .legal :global(h2) { font-size: 24px; margin: 32px 0 10px; }
+  .legal :global(p), .legal :global(li) { color: var(--inchiostro); }
+  .legal :global(p + p) { margin-top: 10px; }
+  .legal :global(ul) { padding-left: 20px; margin: 8px 0; }
+</style>

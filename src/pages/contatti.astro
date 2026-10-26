@@ -1,0 +1,164 @@
+---
+import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
+import Hours from '../components/Hours.astro';
+import { SITE, WHATSAPP, waLink, WA_HELLO, fullAddress, directionsHref } from '../data/site';
+import { TRATTAMENTI } from '../data/trattamenti';
+
+const wa = waLink(WA_HELLO);
+const addr = fullAddress();
+const dir = directionsHref();
+const mapSrc = addr ? 'https://www.google.com/maps?q=' + encodeURIComponent(`${SITE.name}, ${addr}`) + '&output=embed' : null;
+const nothing = !wa && !SITE.phone && !SITE.email && !addr;
+---
+<Base title="Contatti e orari · Jenny Nails Studio" description="Prenota da Jenny Nails Studio su WhatsApp o per telefono. Indirizzo, orari e indicazioni per raggiungere il salone.">
+  <section class="wrap top">
+    <nav class="crumb" aria-label="Percorso"><a href="/">Home</a><span aria-hidden="true">/</span><span aria-current="page">Contatti</span></nav>
+    <p class="eyebrow">Contatti</p>
+    <h1 class="title-lg">Prenota il tuo <em>appuntamento</em></h1>
+    {nothing && <p class="muted">I contatti del salone saranno pubblicati qui a breve.</p>}
+  </section>
+
+  <section class="wrap grid">
+    {WHATSAPP && (
+      <form class="card book" id="prenota" action={`https://wa.me/${WHATSAPP}`} method="get" target="_blank">
+        <h2>Scrivici su WhatsApp</h2>
+        <p class="muted">Compila quello che sai: prepariamo noi il messaggio. Non è ancora una prenotazione, ti rispondiamo con l’orario libero.</p>
+        <label>
+          <span>Trattamento</span>
+          <select name="t">
+            <option value="">Non so ancora, consigliami</option>
+            {TRATTAMENTI.map((t) => <option value={t.name}>{t.name}</option>)}
+          </select>
+        </label>
+        <div class="two">
+          <label>
+            <span>Giorno preferito</span>
+            <input type="date" name="d" />
+          </label>
+          <label>
+            <span>Momento</span>
+            <select name="f">
+              <option value="">Indifferente</option>
+              <option>Mattina</option>
+              <option>Pomeriggio</option>
+            </select>
+          </label>
+        </div>
+        <label>
+          <span>Il tuo nome <small>(facoltativo)</small></span>
+          <input type="text" name="n" autocomplete="given-name" maxlength="60" />
+        </label>
+        <input type="hidden" name="text" value={WA_HELLO} />
+        <button class="btn btn-primary" type="submit"><Icon name="message-circle" />Apri WhatsApp</button>
+        <p class="small muted">Il messaggio si apre su WhatsApp e lo invii tu: dal sito non salviamo nulla.</p>
+      </form>
+    )}
+
+    <div class="side">
+      {(SITE.phone || wa || SITE.email || SITE.instagram) && (
+        <div class="card box">
+          <h2>Contatti diretti</h2>
+          <ul class="links">
+            {SITE.phone && <li><a href={`tel:${SITE.phone.tel}`}><Icon name="phone" />{SITE.phone.display}</a></li>}
+            {wa && <li><a href={wa} rel="noopener"><Icon name="message-circle" />WhatsApp</a></li>}
+            {SITE.email && <li><a href={`mailto:${SITE.email}`}><Icon name="mail" />{SITE.email}</a></li>}
+            {SITE.instagram && <li><a href={SITE.instagram} rel="noopener"><Icon name="instagram" />Instagram</a></li>}
+          </ul>
+        </div>
+      )}
+      {SITE.hours && (
+        <div class="card box">
+          <h2>Orari</h2>
+          <Hours />
+        </div>
+      )}
+      {addr && (
+        <div class="card box">
+          <h2>Dove siamo</h2>
+          <p>{addr}</p>
+          {dir && <a class="btn btn-ghost" href={dir} rel="noopener"><Icon name="navigation" size={20} />Indicazioni</a>}
+        </div>
+      )}
+    </div>
+  </section>
+
+  {mapSrc && (
+    <section class="wrap mapw">
+      <div class="map card" data-src={mapSrc}>
+        <p class="muted">La mappa è di Google: si carica solo se la apri.</p>
+        <button class="btn btn-ghost" type="button" data-load-map><Icon name="map-pin" size={20} />Mostra la mappa</button>
+      </div>
+    </section>
+  )}
+</Base>
+
+<script>
+  // Prepara il testo WhatsApp dai campi del modulo (senza JS si apre il messaggio di base).
+  const form = document.querySelector<HTMLFormElement>('#prenota');
+  form?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const fd = new FormData(form);
+    const v = (k: string) => String(fd.get(k) ?? '').trim();
+    const parts = ['Ciao Jenny! Ti scrivo dal sito, vorrei prenotare'];
+    parts[0] += v('t') ? `: ${v('t')}.` : ' un appuntamento, mi consigli tu il trattamento?';
+    if (v('d')) {
+      const d = new Date(`${v('d')}T12:00:00`);
+      parts.push(`Giorno preferito: ${d.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' })}${v('f') ? `, ${v('f').toLowerCase()}` : ''}.`);
+    } else if (v('f')) {
+      parts.push(`Preferisco di ${v('f').toLowerCase()}.`);
+    }
+    if (v('n')) parts.push(`Sono ${v('n')}.`);
+    window.open(`${form.action}?text=${encodeURIComponent(parts.join('\n'))}`, '_blank', 'noopener');
+  });
+
+  // Mappa Google solo su richiesta: niente richieste a terzi finché non serve.
+  document.querySelector('[data-load-map]')?.addEventListener('click', (e) => {
+    const box = (e.currentTarget as HTMLElement).closest<HTMLElement>('.map')!;
+    const f = document.createElement('iframe');
+    f.src = box.dataset.src!;
+    f.title = 'Mappa del salone';
+    f.loading = 'lazy';
+    f.referrerPolicy = 'no-referrer-when-downgrade';
+    box.replaceChildren(f);
+    box.classList.add('on');
+  });
+</script>
+
+<style>
+  .top { padding-block: 48px 32px; display: flex; flex-direction: column; gap: 14px; }
+  .crumb { display: flex; gap: 8px; font-size: 14px; color: var(--testo-2); }
+  .crumb a { color: var(--testo-2); }
+  .grid { display: grid; grid-template-columns: 1.15fr .85fr; gap: 20px; align-items: start; padding-bottom: 20px; }
+  .grid:not(:has(.book)) { grid-template-columns: 1fr; max-width: 640px; }
+  h2 { font-size: 26px; }
+  .book { padding: 32px; display: flex; flex-direction: column; gap: 16px; }
+  label { display: flex; flex-direction: column; gap: 6px; font-weight: 700; font-size: 15px; }
+  small { font-weight: 500; color: var(--testo-2); }
+  input, select { font: inherit; font-weight: 500; min-height: 50px; padding: 0 14px; border: 1.5px solid var(--bordo); border-radius: 14px; background: var(--avorio); color: var(--inchiostro); width: 100%; }
+  input:focus, select:focus { border-color: var(--malva); outline: none; box-shadow: 0 0 0 3px var(--rosa); }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .small { font-size: 13.5px; }
+  .side { display: flex; flex-direction: column; gap: 20px; }
+  .box { padding: 28px; display: flex; flex-direction: column; gap: 12px; }
+  .box .btn { align-self: flex-start; }
+  .links { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+  .links a { display: flex; gap: 12px; align-items: center; min-height: 48px; text-decoration: none; font-weight: 700; color: var(--inchiostro); border-bottom: 1px solid var(--bordo); }
+  .links li:last-child a { border-bottom: 0; }
+  .links a:hover { color: var(--malva); }
+  .links :global(.icon) { color: var(--malva); }
+  .mapw { padding-block: 0 88px; }
+  .map { min-height: 220px; display: flex; flex-direction: column; gap: 14px; align-items: center; justify-content: center; text-align: center; padding: 24px; background: var(--cipria); overflow: hidden; }
+  .map.on { padding: 0; }
+  .map :global(iframe) { width: 100%; height: 380px; border: 0; display: block; }
+  @media (max-width: 899px) {
+    .grid { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 760px) {
+    .top { padding-block: 32px 24px; }
+    .book, .box { padding: 22px; }
+    .two { grid-template-columns: 1fr; }
+    .book .btn { width: 100%; }
+    .mapw { padding-bottom: 48px; }
+  }
+</style>

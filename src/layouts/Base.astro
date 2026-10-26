@@ -1,0 +1,101 @@
+---
+import '@fontsource-variable/fraunces/wght.css';
+import '@fontsource-variable/fraunces/wght-italic.css';
+import '@fontsource-variable/manrope';
+import '../styles/global.css';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import ActionBar from '../components/ActionBar.astro';
+import PreviewBanner from '../components/PreviewBanner.astro';
+import { SITE, IS_PREVIEW, WHATSAPP } from '../data/site';
+import { BUILD_VERSION, withVersion } from '../data/build';
+
+interface Props {
+  title: string;
+  description?: string;
+  /** JSON-LD aggiuntivo (es. FAQPage, BreadcrumbList). */
+  schema?: Record<string, unknown>[];
+  noindex?: boolean;
+}
+
+const { title, description = SITE.description, schema = [], noindex = false } = Astro.props;
+const site = Astro.site!;
+const canonical = new URL(Astro.url.pathname, site).href;
+const ogImage = new URL(withVersion('/og.png'), site).href;
+
+// NailSalon (schema.org): solo dati confermati, i campi null non compaiono.
+const business: Record<string, unknown> = {
+  '@context': 'https://schema.org',
+  '@type': 'NailSalon',
+  '@id': `${site.origin}/#salone`,
+  name: SITE.name,
+  description: SITE.description,
+  url: `${site.origin}/`,
+  image: ogImage,
+};
+if (SITE.legalName) business.legalName = SITE.legalName;
+if (SITE.vat) business.vatID = SITE.vat;
+if (SITE.phone) business.telephone = SITE.phone.tel;
+if (SITE.email) business.email = SITE.email;
+if (SITE.instagram) business.sameAs = [SITE.instagram];
+if (SITE.address) {
+  business.address = {
+    '@type': 'PostalAddress',
+    streetAddress: SITE.address.street,
+    postalCode: SITE.address.postalCode,
+    addressLocality: SITE.address.city,
+    addressRegion: SITE.address.province,
+    addressCountry: SITE.address.country,
+  };
+}
+if (SITE.hours) {
+  business.openingHoursSpecification = SITE.hours.flatMap((h) =>
+    h.slots.map((s) => {
+      const [opens, closes] = s.split('-');
+      return { '@type': 'OpeningHoursSpecification', dayOfWeek: `https://schema.org/${h.day}`, opens, closes };
+    }),
+  );
+}
+if (WHATSAPP) business.potentialAction = { '@type': 'ReserveAction', target: `https://wa.me/${WHATSAPP}` };
+const robots = IS_PREVIEW || noindex ? 'noindex, nofollow' : 'index, follow';
+---
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="robots" content={robots} />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" href={withVersion('/favicon.svg')} type="image/svg+xml" />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+    <meta name="theme-color" content="#FCF8F5" />
+    <meta name="version" content={BUILD_VERSION} />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="it_IT" />
+    <meta property="og:site_name" content={SITE.name} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Jenny Nails Studio, manicure e nail art su appuntamento" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    {!IS_PREVIEW && <script type="application/ld+json" set:html={JSON.stringify(business)} />}
+    {!IS_PREVIEW && schema.map((s) => <script type="application/ld+json" set:html={JSON.stringify(s)} />)}
+  </head>
+  <body>
+    <a class="skip" href="#contenuto">Vai al contenuto</a>
+    <PreviewBanner />
+    <Header />
+    <main id="contenuto">
+      <slot />
+    </main>
+    <Footer />
+    <ActionBar />
+  </body>
+</html>

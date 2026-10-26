@@ -1,0 +1,66 @@
+---
+import Wordmark from './Wordmark.astro';
+import Icon from './Icon.astro';
+import { BOOK_HREF } from '../data/site';
+const path = Astro.url.pathname;
+const nav = [
+  { href: '/trattamenti/', label: 'Trattamenti' },
+  { href: '/#studio', label: 'Lo studio' },
+  { href: '/#faq', label: 'Domande' },
+  { href: '/contatti/', label: 'Contatti' },
+];
+const external = BOOK_HREF.startsWith('http');
+---
+<header class="hdr">
+  <div class="wrap hdr-in">
+    <a href="/" class="brand" aria-label="Jenny Nails Studio, home"><Wordmark /></a>
+    <details class="mnav">
+      <summary aria-label="Apri il menu di navigazione">
+        <span class="open"><Icon name="menu" /></span>
+        <span class="close"><Icon name="x" /></span>
+      </summary>
+      <nav aria-label="Principale">
+        {nav.map((n) => (
+          <a href={n.href} aria-current={path === n.href ? 'page' : undefined}>{n.label}</a>
+        ))}
+        <a href={BOOK_HREF} class="btn btn-primary" rel={external ? 'noopener' : undefined}><Icon name="calendar-heart" />Prenota</a>
+      </nav>
+    </details>
+  </div>
+</header>
+
+<style>
+  .hdr { background: color-mix(in srgb, var(--avorio) 92%, transparent); backdrop-filter: blur(8px); border-bottom: 1px solid var(--bordo); position: sticky; top: 0; z-index: 20; }
+  .hdr-in { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 72px; }
+  .brand { text-decoration: none; display: flex; }
+  .mnav summary { display: none; }
+  nav { display: flex; align-items: center; gap: 28px; font-weight: 600; font-size: 15.5px; }
+  nav a:not(.btn) { color: var(--inchiostro); text-decoration: none; }
+  nav a:not(.btn):hover, nav a[aria-current='page'] { color: var(--malva); }
+  nav a[aria-current='page'] { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 6px; }
+
+  @media (min-width: 900px) {
+    .mnav { display: contents; }
+    .mnav > nav { display: flex; }
+  }
+  @media (max-width: 899px) {
+    .hdr-in { min-height: 64px; }
+    .mnav summary { display: flex; align-items: center; justify-content: center; width: 48px; height: 48px; margin-right: -8px; cursor: pointer; list-style: none; border-radius: 12px; }
+    .mnav summary::-webkit-details-marker { display: none; }
+    .mnav .close, .mnav[open] .open { display: none; }
+    .mnav[open] .close { display: flex; }
+    .mnav nav { position: absolute; left: 0; right: 0; top: 64px; flex-direction: column; align-items: stretch; gap: 0; background: var(--avorio); border-bottom: 1px solid var(--bordo); padding: 4px 16px 20px; box-shadow: 0 12px 24px rgba(45, 34, 38, .08); }
+    .mnav nav a:not(.btn) { padding: 14px 0; border-bottom: 1px solid var(--bordo); font-size: 17px; }
+    .mnav nav .btn { margin-top: 16px; }
+  }
+</style>
+
+<script>
+  // Desktop: <details> sempre aperto. Telefono: si chiude toccando un link (anche le ancore #).
+  const d = document.querySelector<HTMLDetailsElement>('.mnav');
+  const mq = window.matchMedia('(min-width: 900px)');
+  const sync = () => { if (d) d.open = mq.matches; };
+  sync();
+  mq.addEventListener('change', sync);
+  d?.querySelectorAll('nav a').forEach((a) => a.addEventListener('click', () => { if (!mq.matches) d.open = false; }));
+</script>

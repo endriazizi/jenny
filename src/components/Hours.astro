@@ -1,0 +1,25 @@
+---
+import { SITE } from '../data/site';
+const fmt = (s: string) => s.replace('-', '–');
+---
+{SITE.hours && (
+  <dl class="hrs">
+    {SITE.hours.map((h) => (
+      <div>
+        <dt>{h.label}</dt>
+        <dd class:list={{ chiuso: !h.slots.length }}>{h.slots.length ? h.slots.map(fmt).join(' · ') : 'Chiuso'}</dd>
+      </div>
+    ))}
+  </dl>
+)}
+{SITE.hours && SITE.byAppointment && <p class="note">Solo su appuntamento.</p>}
+
+<style>
+  .hrs { margin: 0; display: flex; flex-direction: column; }
+  .hrs div { display: flex; justify-content: space-between; gap: 16px; padding: 7px 0; border-bottom: 1px dashed var(--bordo); font-size: 15.5px; }
+  .hrs div:last-child { border-bottom: 0; }
+  dt { font-weight: 600; }
+  dd { margin: 0; font-variant-numeric: tabular-nums; text-align: right; }
+  .chiuso { color: var(--testo-2); }
+  .note { font-size: 14px; color: var(--testo-2); margin-top: 6px; }
+</style>

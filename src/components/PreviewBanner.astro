@@ -1,0 +1,9 @@
+---
+import { IS_PREVIEW } from '../data/site';
+---
+{IS_PREVIEW && (
+  <p class="pv" role="note">Anteprima grafica: indirizzo, telefono e orari sono di esempio.</p>
+)}
+<style>
+  .pv { background: var(--inchiostro); color: var(--avorio); text-align: center; font-size: 13px; font-weight: 600; padding: 6px 16px; }
+</style>

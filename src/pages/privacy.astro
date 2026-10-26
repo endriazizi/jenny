@@ -1,0 +1,29 @@
+---
+import Legal from '../components/Legal.astro';
+import { SITE, fullAddress } from '../data/site';
+const owner = SITE.legalName ?? '[titolare da completare]';
+const addr = fullAddress();
+---
+<Legal title="Privacy · Jenny Nails Studio" description="Informativa sul trattamento dei dati personali del sito di Jenny Nails Studio." heading="Informativa privacy" updated="26 ottobre 2026">
+  <p>Questa informativa spiega come vengono trattati i dati personali di chi visita questo sito, ai sensi del Regolamento UE 2016/679 (GDPR).</p>
+
+  <h2>Titolare del trattamento</h2>
+  <p>{owner}{SITE.vat && `, P.IVA ${SITE.vat}`}{addr && `, ${addr}`}.{SITE.email && <> Email: <a href={`mailto:${SITE.email}`}>{SITE.email}</a>.</>}</p>
+
+  <h2>Quali dati raccoglie il sito</h2>
+  <p>Il sito non ha moduli che salvano dati, non richiede registrazione e non usa strumenti di statistica o pubblicità.</p>
+  <ul>
+    <li><strong>Dati tecnici di navigazione.</strong> Il server che ospita il sito registra, come ogni server web, l’indirizzo IP, la data e la pagina richiesta. Servono solo a far funzionare il sito e a proteggerlo, e vengono cancellati periodicamente dal fornitore di hosting.</li>
+    <li><strong>Messaggi su WhatsApp.</strong> Il modulo “Scrivici su WhatsApp” prepara il testo nel tuo browser e apre WhatsApp: il sito non lo riceve né lo salva. Se invii il messaggio, i dati che scrivi (nome, numero, trattamento, giorno) li riceviamo su WhatsApp e li usiamo solo per rispondere e fissare l’appuntamento. WhatsApp è un servizio di WhatsApp Ireland Limited, con una propria informativa.</li>
+    <li><strong>Telefono ed email.</strong> Se ci chiami o scrivi, usiamo i tuoi dati solo per rispondere alla richiesta.</li>
+  </ul>
+
+  <h2>Base giuridica e conservazione</h2>
+  <p>Trattiamo i dati per rispondere a una tua richiesta e per gestire l’appuntamento (art. 6.1.b GDPR). Li conserviamo per il tempo necessario a questo scopo e a eventuali obblighi di legge.</p>
+
+  <h2>Servizi di terze parti</h2>
+  <p>La mappa nella pagina Contatti è di Google e si carica solo se premi “Mostra la mappa”: da quel momento si applica l’informativa di Google. I font del sito sono ospitati sul nostro server, senza richieste a servizi esterni.</p>
+
+  <h2>I tuoi diritti</h2>
+  <p>Puoi chiedere in ogni momento l’accesso ai tuoi dati, la rettifica, la cancellazione, la limitazione o l’opposizione al trattamento, scrivendo al titolare{SITE.email ? ' all’indirizzo indicato sopra' : ''}. Puoi anche presentare reclamo al Garante per la protezione dei dati personali (<a href="https://www.garanteprivacy.it" rel="noopener">garanteprivacy.it</a>).</p>
+</Legal>

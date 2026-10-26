@@ -1,0 +1,103 @@
+/* Palette Jenny Nails Studio: chiara, cipria e avorio. Contrasti verificati (WCAG AA) nel README. */
+:root {
+  --avorio: #fcf8f5;
+  --cipria: #f4e7e2;
+  --cipria-2: #ecd9d2;
+  --bordo: #e8d6cf;
+  --malva: #8e4a5e;
+  --malva-scuro: #713a4b;
+  --rosa: #f2c9d3;
+  --oro-testo: #7e5f26;
+  --inchiostro: #2d2226;
+  --testo-2: #65565b;
+  --bianco: #ffffff;
+
+  --serif: 'Fraunces Variable', Georgia, serif;
+  --sans: 'Manrope Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --wrap: 1160px;
+  --pill: 999px;
+  --radius: 22px;
+  --ombra: 0 1px 2px rgba(45, 34, 38, .04), 0 8px 24px rgba(45, 34, 38, .06);
+  --wa: #1e6b3e;
+  --wa-bg: #e6f2ea;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { scroll-behavior: smooth; scroll-padding-top: 80px; -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--avorio);
+  color: var(--inchiostro);
+  font-family: var(--sans);
+  font-size: 17px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+img { max-width: 100%; height: auto; display: block; }
+a { color: var(--malva); text-underline-offset: 3px; }
+a:hover { color: var(--malva-scuro); }
+h1, h2, h3 { font-family: var(--serif); font-weight: 500; line-height: 1.12; margin: 0; letter-spacing: -0.015em; }
+h1 em, h2 em { font-style: italic; color: var(--malva); }
+p { margin: 0; }
+
+.wrap { max-width: var(--wrap); margin: 0 auto; padding-inline: 24px; }
+.section { padding-block: 88px; }
+.section-alt { background: var(--cipria); }
+.eyebrow {
+  color: var(--oro-testo);
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.muted { color: var(--testo-2); }
+.title-lg { font-size: clamp(32px, 5vw, 46px); }
+.head { display: flex; flex-direction: column; gap: 12px; max-width: 640px; margin-bottom: 40px; }
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 0 24px;
+  border-radius: var(--pill);
+  font: inherit;
+  font-weight: 700;
+  font-size: 16px;
+  text-decoration: none;
+  border: 1.5px solid transparent;
+  cursor: pointer;
+  transition: background-color .15s, color .15s, border-color .15s;
+}
+.btn-primary { background: var(--malva); color: var(--bianco); }
+.btn-primary:hover { background: var(--malva-scuro); color: var(--bianco); }
+.btn-ghost { border-color: var(--inchiostro); color: var(--inchiostro); background: transparent; }
+.btn-ghost:hover { background: var(--inchiostro); color: var(--avorio); }
+.btn-wa { border-color: var(--wa); color: var(--wa); background: var(--wa-bg); }
+.btn-wa:hover { background: var(--wa); color: var(--bianco); }
+.btn .icon { flex: none; margin-left: -4px; }
+
+.card {
+  background: var(--bianco);
+  border: 1px solid var(--bordo);
+  border-radius: var(--radius);
+  box-shadow: var(--ombra);
+}
+
+.skip { position: absolute; left: -9999px; }
+.skip:focus { left: 16px; top: 16px; z-index: 100; background: var(--bianco); padding: 8px 16px; border-radius: 8px; }
+:focus-visible { outline: 3px solid var(--malva); outline-offset: 3px; border-radius: 4px; }
+
+@media (max-width: 760px) {
+  body { font-size: 16px; padding-bottom: calc(96px + env(safe-area-inset-bottom)); }
+  .section { padding-block: 56px; }
+  .wrap { padding-inline: 16px; }
+  .head { margin-bottom: 28px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+}
