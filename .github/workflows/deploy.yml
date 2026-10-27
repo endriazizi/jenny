@@ -20,6 +20,9 @@ jobs:
     env:
       # Dominio definitivo: GitHub → Settings → Secrets and variables → Actions → Variables → SITE_URL
       SITE_URL: ${{ vars.SITE_URL }}
+      # Prenotazione online: PUBLIC_BOOKING_ONLINE=1 quando l'API Jenny è attiva (vedi docs/PRENOTAZIONE.md)
+      PUBLIC_BOOKING_ONLINE: ${{ vars.PUBLIC_BOOKING_ONLINE }}
+      PUBLIC_BOOKING_API: ${{ vars.PUBLIC_BOOKING_API }}
     steps:
       - uses: actions/checkout@v4
 

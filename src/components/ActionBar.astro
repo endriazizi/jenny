@@ -1,17 +1,18 @@
 ---
 import { SITE, WHATSAPP, waLink, WA_HELLO, BOOK_HREF, directionsHref } from '../data/site';
+import { BOOKING_ONLINE } from '../data/booking';
 import Icon from './Icon.astro';
 const wa = waLink(WA_HELLO);
 const dir = directionsHref();
 const items = [
   SITE.phone && { href: `tel:${SITE.phone.tel}`, icon: 'phone', label: 'Chiama' },
   wa && { href: wa, icon: 'message-circle', label: 'WhatsApp', cls: 'wa', ext: true },
-  !WHATSAPP && { href: BOOK_HREF, icon: 'calendar-heart', label: 'Prenota', cls: 'main' },
+  (BOOKING_ONLINE || !WHATSAPP) && { href: BOOK_HREF, icon: 'calendar-heart', label: 'Prenota', cls: 'main' },
   { href: '/trattamenti/', icon: 'sparkles', label: 'Trattamenti' },
   dir && { href: dir, icon: 'map-pin', label: 'Dove siamo', ext: true },
 ].filter(Boolean) as { href: string; icon: 'phone'; label: string; cls?: string; ext?: boolean }[];
-// Con WhatsApp attivo, WhatsApp è l'azione principale.
-if (WHATSAPP) items.find((i) => i.cls === 'wa')!.cls = 'main wa';
+// Prenotazione online attiva: è l'azione principale. Altrimenti lo è WhatsApp.
+if (WHATSAPP && !BOOKING_ONLINE) items.find((i) => i.cls === 'wa')!.cls = 'main wa';
 ---
 <nav class="bar" aria-label="Azioni rapide" style={`--cols:${items.length}`}>
   {items.map((i) => (

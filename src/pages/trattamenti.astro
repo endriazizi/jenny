@@ -2,6 +2,7 @@
 import Base from '../layouts/Base.astro';
 import Icon from '../components/Icon.astro';
 import { SITE, waLink, BOOK_HREF } from '../data/site';
+import { BOOKING_ONLINE } from '../data/booking';
 import { TRATTAMENTI, waTextFor } from '../data/trattamenti';
 
 const site = Astro.site!;
@@ -33,7 +34,7 @@ const anyPrice = TRATTAMENTI.some((t) => t.price);
   <section class="wrap list">
     {TRATTAMENTI.map((t) => {
       const wa = waLink(waTextFor(t));
-      const href = wa ?? BOOK_HREF;
+      const href = BOOKING_ONLINE ? `${BOOK_HREF}?t=${encodeURIComponent(t.name)}` : wa ?? BOOK_HREF;
       return (
         <article class="card row" id={t.slug}>
           <span class="ticon"><Icon name={t.icon} size={26} /></span>
@@ -47,8 +48,8 @@ const anyPrice = TRATTAMENTI.some((t) => t.price);
               </p>
             )}
           </div>
-          <a class={wa ? 'btn btn-wa' : 'btn btn-ghost'} href={href} rel={href.startsWith('http') ? 'noopener' : undefined}>
-            <Icon name={wa ? 'message-circle' : 'calendar-heart'} size={20} />Prenota<span class="sr"> {t.name}</span>
+          <a class={wa && !BOOKING_ONLINE ? 'btn btn-wa' : 'btn btn-ghost'} href={href} rel={href.startsWith('http') ? 'noopener' : undefined}>
+            <Icon name={wa && !BOOKING_ONLINE ? 'message-circle' : 'calendar-heart'} size={20} />Prenota<span class="sr"> {t.name}</span>
           </a>
         </article>
       );

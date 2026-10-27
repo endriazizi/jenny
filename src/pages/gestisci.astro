@@ -1,0 +1,130 @@
+---
+import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
+import '../styles/booking.css';
+import { SITE, waLink } from '../data/site';
+import { BOOKING_API } from '../data/booking';
+
+const wa = waLink('Ciao Jenny! Ti scrivo per il mio appuntamento.');
+---
+<Base title="Il mio appuntamento · Jenny Nails Studio" description="Controlla, sposta o annulla il tuo appuntamento da Jenny Nails Studio." noindex>
+  <section class="bk">
+    <p class="eyebrow">Il mio appuntamento</p>
+    <h1 class="title-lg">Il tuo <em>appuntamento</em></h1>
+    <div id="manage" data-api={BOOKING_API} aria-live="polite"><p class="muted">Carico l’appuntamento…</p></div>
+    <noscript><p class="err">Per vedere l’appuntamento serve JavaScript.</p></noscript>
+
+    <div id="help" class="card panel" hidden>
+      <h2>Serve aiuto?</h2>
+      <p class="muted">Scrivici o chiamaci e sistemiamo noi l’appuntamento.</p>
+      <div class="actions">
+        {wa && <a class="btn btn-wa" href={wa} rel="noopener"><Icon name="message-circle" />WhatsApp</a>}
+        {SITE.phone && <a class="btn btn-ghost" href={`tel:${SITE.phone.tel}`}><Icon name="phone" />{SITE.phone.display}</a>}
+      </div>
+    </div>
+  </section>
+</Base>
+
+<script>
+  import { api, h, slotPicker, whenLabel, euro, type Slot } from '../scripts/booking-client';
+
+  interface PublicBooking {
+    status: string; starts_at: string; ends_at: string; total_cents: number | null;
+    items: { name: string; price_cents: number | null; duration_min: number }[];
+    can_change: boolean; change_deadline: string;
+    salon: { name: string; address: string | null; phone: string | null };
+  }
+  const STATUS: Record<string, string> = {
+    pending: 'In attesa di conferma', confirmed: 'Confermato', cancelled: 'Annullato',
+    completed: 'Completato', no_show: 'Non presentata',
+  };
+
+  const box = document.getElementById('manage')!;
+  const help = document.getElementById('help')!;
+  const API = box.dataset.api!;
+  // Il token sta nel frammento (#…): il browser non lo manda al server del sito.
+  const token = decodeURIComponent(location.hash.slice(1)).trim();
+  addEventListener('hashchange', () => location.reload());
+
+  if (!/^[A-Za-z0-9_-]{20,100}$/.test(token)) {
+    box.replaceChildren(h('div', { class: 'card panel' }, h('h2', {}, 'Link non valido'),
+      h('p', { class: 'muted' }, 'Apri il link dall’email di conferma, senza modificarlo.')));
+    help.hidden = false;
+  } else {
+    load();
+  }
+
+  async function load() {
+    try {
+      render(await api<PublicBooking>(API, '/manage', { token }));
+    } catch (e) {
+      box.replaceChildren(h('div', { class: 'card panel' }, h('h2', {}, 'Appuntamento non trovato'), h('p', { class: 'muted' }, (e as Error).message)));
+      help.hidden = false;
+    }
+  }
+
+  function render(b: PublicBooking, notice?: string) {
+    help.hidden = false;
+    const active = b.status === 'pending' || b.status === 'confirmed';
+    const panel = h('div', { class: 'card panel' },
+      notice && h('p', { class: 'ok', role: 'status' }, notice),
+      h('p', {}, h('span', { class: `badge ${b.status}` }, STATUS[b.status] || b.status)),
+      h('h2', {}, whenLabel(b.starts_at)),
+      h('div', { class: 'recap' },
+        h('ul', {}, ...b.items.map((i) => h('li', {}, i.name))),
+        h('span', { class: 'small' }, `Totale di listino: ${euro(b.total_cents)}`),
+        b.salon.address && h('span', { class: 'small muted' }, `${b.salon.name}, ${b.salon.address}`)),
+    );
+    if (b.can_change) {
+      const move = h('button', { type: 'button', class: 'btn btn-primary' }, 'Sposta');
+      const cancel = h('button', { type: 'button', class: 'btn btn-ghost' }, 'Annulla l’appuntamento');
+      move.addEventListener('click', () => reschedule(b));
+      cancel.addEventListener('click', () => askCancel(b));
+      panel.append(h('p', { class: 'muted small' }, `Puoi spostarlo o annullarlo fino a ${whenLabel(b.change_deadline)}.`), h('div', { class: 'actions' }, move, cancel));
+    } else if (active) {
+      panel.append(h('p', { class: 'muted small' }, 'Da qui non si può più modificare: per cambiamenti scrivici o chiamaci.'));
+    }
+    box.replaceChildren(panel);
+  }
+
+  function reschedule(b: PublicBooking) {
+    const err = h('p', { class: 'err', role: 'alert' });
+    const picker = slotPicker({
+      days: 60,
+      load: (date) => api<{ slots: Slot[] }>(API, '/manage/availability', { token, date }),
+      onPick: async (date, time) => {
+        if (!confirm(`Spostare l’appuntamento a ${whenLabel(`${date} ${time}:00`)}?`)) return;
+        err.textContent = '';
+        try {
+          render(await api<PublicBooking>(API, '/manage/reschedule', { token, date, time }), 'Appuntamento spostato. Ti mandiamo un’email con il nuovo orario.');
+        } catch (e) {
+          err.textContent = (e as Error).message;
+        }
+      },
+    });
+    const back = h('button', { type: 'button', class: 'linkbtn' }, '← Lascia com’è');
+    back.addEventListener('click', () => render(b));
+    box.replaceChildren(h('div', { class: 'card panel' }, h('h2', {}, 'Scegli il nuovo orario'),
+      h('p', { class: 'muted small' }, `Adesso: ${whenLabel(b.starts_at)}. Il vecchio orario resta tuo finché non ne scegli uno nuovo.`), picker, err, back));
+  }
+
+  function askCancel(b: PublicBooking) {
+    const reason = h('textarea', { rows: 2, maxlength: 300 });
+    const err = h('p', { class: 'err', role: 'alert' });
+    const yes = h('button', { type: 'submit', class: 'btn btn-primary' }, 'Sì, annulla');
+    const no = h('button', { type: 'button', class: 'linkbtn' }, '← No, lo tengo');
+    no.addEventListener('click', () => render(b));
+    const form = h('form', {}, h('label', { class: 'f' }, 'Vuoi dirci il motivo? (facoltativo)', reason), err, h('div', { class: 'actions' }, yes, no));
+    form.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      yes.disabled = true;
+      try {
+        render(await api<PublicBooking>(API, '/manage/cancel', { token, reason: reason.value }), 'Appuntamento annullato. Grazie di averci avvisato.');
+      } catch (e) {
+        yes.disabled = false;
+        err.textContent = (e as Error).message;
+      }
+    });
+    box.replaceChildren(h('div', { class: 'card panel' }, h('h2', {}, 'Annullare l’appuntamento?'), h('p', {}, whenLabel(b.starts_at)), form));
+  }
+</script>
