@@ -1,0 +1,46 @@
+---
+/**
+ * "Aggiungi alla schermata Home". Il pulsante compare solo quando il browser lo permette
+ * (evento beforeinstallprompt); su iPhone e iPad, dove l'evento non esiste, mostra le istruzioni di Safari.
+ */
+---
+<div class="install" id="install" hidden>
+  <p class="h">App</p>
+  <button type="button" class="btn btn-ghost" id="install-btn" hidden>Aggiungi alla schermata Home</button>
+  <p id="install-ios" hidden>Su iPhone: tocca <strong>Condividi</strong> in Safari, poi <strong>Aggiungi alla schermata Home</strong>.</p>
+</div>
+
+<script>
+  const wrap = document.getElementById('install')!;
+  const btn = document.getElementById('install-btn')!;
+  const standalone = matchMedia('(display-mode: standalone)').matches || (navigator as { standalone?: boolean }).standalone === true;
+  let deferred: (Event & { prompt: () => Promise<void> }) | null = null;
+
+  if (!standalone) {
+    addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferred = e as typeof deferred;
+      wrap.hidden = false;
+      btn.hidden = false;
+    });
+    const ua = navigator.userAgent;
+    const ios = /iPhone|iPad|iPod/.test(ua) || (ua.includes('Macintosh') && navigator.maxTouchPoints > 1);
+    if (ios && /Safari/.test(ua) && !/CriOS|FxiOS|EdgiOS/.test(ua)) {
+      wrap.hidden = false;
+      document.getElementById('install-ios')!.hidden = false;
+    }
+  }
+  btn.addEventListener('click', async () => {
+    if (!deferred) return;
+    await deferred.prompt();
+    deferred = null;
+    wrap.hidden = true;
+  });
+  addEventListener('appinstalled', () => (wrap.hidden = true));
+</script>
+
+<style>
+  .install { display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
+  .h { color: var(--oro-testo); font-weight: 700; font-size: 13px; letter-spacing: .12em; text-transform: uppercase; }
+  .install .btn { min-height: 42px; font-size: 15px; }
+</style>

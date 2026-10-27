@@ -1,22 +1,40 @@
 ---
 import Legal from '../components/Legal.astro';
 import { SITE, fullAddress } from '../data/site';
+import { BOOKING_ONLINE, PRIVACY_VERSION } from '../data/booking';
 const owner = SITE.legalName ?? SITE.name;
 const addr = fullAddress();
 ---
-<Legal title="Privacy · Jenny Nails Studio" description="Informativa sul trattamento dei dati personali del sito di Jenny Nails Studio." heading="Informativa privacy" updated="26 ottobre 2026">
+<Legal title="Privacy · Jenny Nails Studio" description="Informativa sul trattamento dei dati personali del sito di Jenny Nails Studio." heading="Informativa privacy" updated={BOOKING_ONLINE ? `27 ottobre 2026 · versione ${PRIVACY_VERSION}` : '26 ottobre 2026'}>
   <p>Questa informativa spiega come vengono trattati i dati personali di chi visita questo sito, ai sensi del Regolamento UE 2016/679 (GDPR).</p>
 
   <h2>Titolare del trattamento</h2>
   <p data-titolare={SITE.legalName ? undefined : 'mancante'}>{owner}{SITE.vat && `, P.IVA ${SITE.vat}`}{addr && `, ${addr}`}.{SITE.email && <> Email: <a href={`mailto:${SITE.email}`}>{SITE.email}</a>.</>}</p>
 
   <h2>Quali dati raccoglie il sito</h2>
-  <p>Il sito non ha moduli che salvano dati, non richiede registrazione e non usa strumenti di statistica o pubblicità.</p>
+  {BOOKING_ONLINE
+    ? <p>Il sito non richiede registrazione e non usa strumenti di statistica o pubblicità. L’unico modulo che salva dati è la prenotazione online, descritta più sotto.</p>
+    : <p>Il sito non ha moduli che salvano dati, non richiede registrazione e non usa strumenti di statistica o pubblicità.</p>}
   <ul>
     <li><strong>Dati tecnici di navigazione.</strong> Il server che ospita il sito registra, come ogni server web, l’indirizzo IP, la data e la pagina richiesta. Servono solo a far funzionare il sito e a proteggerlo, e vengono cancellati periodicamente dal fornitore di hosting.</li>
     <li><strong>Messaggi su WhatsApp.</strong> Il modulo “Scrivici su WhatsApp” prepara il testo nel tuo browser e apre WhatsApp: il sito non lo riceve né lo salva. Se invii il messaggio, i dati che scrivi (nome, numero, trattamento, giorno) li riceviamo su WhatsApp e li usiamo solo per rispondere e fissare l’appuntamento. WhatsApp è un servizio di WhatsApp Ireland Limited, con una propria informativa.</li>
     <li><strong>Telefono ed email.</strong> Se ci chiami o scrivi, usiamo i tuoi dati solo per rispondere alla richiesta.</li>
   </ul>
+
+  {BOOKING_ONLINE && (
+    <>
+      <h2 id="prenotazione-online">Prenotazione online</h2>
+      <p>Se prenoti dalla pagina “Prenota” raccogliamo nome, cognome, email, cellulare (facoltativo), eventuali note, i trattamenti, il giorno e l’orario scelti, e le tue scelte sui consensi con la data e la versione di questa informativa.</p>
+      <ul>
+        <li><strong>A cosa servono.</strong> A fissare e gestire l’appuntamento: codice di verifica via email, conferma, promemoria il giorno prima e un’ora prima, avvisi se l’appuntamento cambia o viene annullato. Base giuridica: esecuzione di misure richieste da te (art. 6.1.b GDPR).</li>
+        <li><strong>WhatsApp (facoltativo).</strong> Solo se lo scegli, conferme e promemoria arrivano anche su WhatsApp, tramite la piattaforma ufficiale WhatsApp Business. Base giuridica: consenso (art. 6.1.a), revocabile in ogni momento.</li>
+        <li><strong>Novità e offerte (facoltativo).</strong> Solo se lo scegli. Il consenso è separato: puoi prenotare anche senza e revocarlo quando vuoi.</li>
+        <li><strong>Link personale.</strong> Nell’email trovi un link per vedere, spostare o annullare l’appuntamento. Salviamo solo una sua impronta cifrata: non condividerlo.</li>
+        <li><strong>Per quanto tempo.</strong> I dati delle clienti senza appuntamenti vengono cancellati in automatico dopo 24 mesi dall’ultimo appuntamento; le prenotazioni non confermate entro un giorno. Puoi chiedere la cancellazione prima, in ogni momento.</li>
+        <li><strong>Chi li tratta per noi.</strong> Il fornitore del gestionale delle prenotazioni e del suo server, il servizio che invia le email e, solo con il tuo consenso, il fornitore della piattaforma WhatsApp Business, nominati responsabili del trattamento. Non vendiamo né cediamo i dati a terzi.</li>
+      </ul>
+    </>
+  )}
 
   <h2>Base giuridica e conservazione</h2>
   <p>Trattiamo i dati per rispondere a una tua richiesta e per gestire l’appuntamento (art. 6.1.b GDPR). Li conserviamo per il tempo necessario a questo scopo e a eventuali obblighi di legge.</p>

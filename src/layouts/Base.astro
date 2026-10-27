@@ -71,6 +71,10 @@ const robots = IS_PREVIEW || noindex ? 'noindex, nofollow' : 'index, follow';
     <link rel="icon" href={withVersion('/favicon.svg')} type="image/svg+xml" />
     <link rel="sitemap" href="/sitemap-index.xml" />
     <meta name="theme-color" content="#FCF8F5" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="Jenny Nails" />
+    <meta name="mobile-web-app-capable" content="yes" />
     <meta name="version" content={BUILD_VERSION} />
 
     <meta property="og:type" content="website" />
@@ -97,5 +101,10 @@ const robots = IS_PREVIEW || noindex ? 'noindex, nofollow' : 'index, follow';
     </main>
     <Footer />
     <ActionBar />
+    {!IS_PREVIEW && (
+      <script is:inline>
+        if ('serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
+      </script>
+    )}
   </body>
 </html>

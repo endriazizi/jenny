@@ -81,6 +81,8 @@ const PREVIEW: Partial<SiteData> = {
   ],
 };
 
+import { BOOKING_ONLINE } from './booking';
+
 export const IS_PREVIEW = import.meta.env.PUBLIC_ANTEPRIMA === '1';
 
 export const SITE: SiteData = IS_PREVIEW ? { ...REAL, ...PREVIEW } : REAL;
@@ -96,8 +98,10 @@ export const waLink = (text: string): string | null =>
 
 export const WA_HELLO = 'Ciao Jenny! Ti scrivo dal sito, vorrei prenotare un appuntamento.';
 
-/** Il modo migliore per prenotare con i dati che ci sono: WhatsApp, poi telefono, poi pagina contatti. */
-export const BOOK_HREF: string = waLink(WA_HELLO) ?? (SITE.phone ? `tel:${SITE.phone.tel}` : '/contatti/');
+/** Il modo migliore per prenotare: online se attivo, poi WhatsApp, telefono, pagina contatti. */
+export const BOOK_HREF: string = BOOKING_ONLINE
+  ? '/prenota/'
+  : waLink(WA_HELLO) ?? (SITE.phone ? `tel:${SITE.phone.tel}` : '/contatti/');
 
 export const fullAddress = (): string | null =>
   SITE.address ? `${SITE.address.street}, ${SITE.address.postalCode} ${SITE.address.city} (${SITE.address.province})` : null;
