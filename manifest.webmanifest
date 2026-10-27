@@ -1,0 +1,20 @@
+{
+  "name": "Jenny Nails Studio",
+  "short_name": "Jenny Nails",
+  "description": "Manicure, nail art e pedicure a Castelraimondo. Prenota il tuo appuntamento.",
+  "lang": "it",
+  "id": "/",
+  "start_url": "/?app=1",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#FCF8F5",
+  "theme_color": "#FCF8F5",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Prenota", "url": "/prenota/", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] }
+  ]
+}
