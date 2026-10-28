@@ -21,7 +21,7 @@ jobs:
       # Dominio definitivo: GitHub → Settings → Secrets and variables → Actions → Variables → SITE_URL
       SITE_URL: ${{ vars.SITE_URL }}
       # Prenotazione online: PUBLIC_BOOKING_ONLINE=1 quando l'API Jenny è attiva (vedi docs/PRENOTAZIONE.md)
-      PUBLIC_BOOKING_ONLINE: ${{ vars.PUBLIC_BOOKING_ONLINE }}
+      PUBLIC_BOOKING_ONLINE: '1'
       PUBLIC_BOOKING_API: ${{ vars.PUBLIC_BOOKING_API }}
     steps:
       - uses: actions/checkout@v4
@@ -35,6 +35,23 @@ jobs:
 
       - name: Controllo tipi
         run: npx astro check
+
+      - name: Verifica API Jenny prima di abilitare le prenotazioni
+        env:
+          API: ${{ env.PUBLIC_BOOKING_API }}
+        run: |
+          node --input-type=module <<'NODE'
+          const base = process.env.API || 'https://api.pizzerialalanterna.it/api/jenny/public';
+          const ctrl = new AbortController();
+          const timeout = setTimeout(() => ctrl.abort(), 10000);
+          try {
+            const res = await fetch(base.replace(/\\/+$/, '') + '/catalog', { signal: ctrl.signal, headers: { Accept: 'application/json' } });
+            if (!res.ok) throw new Error('Catalog HTTP ' + res.status);
+            const data = await res.json();
+            if (!data || !Array.isArray(data.services) || !data.rules) throw new Error('Risposta catalogo incompleta');
+            console.log('Catalogo Jenny disponibile, servizi:', data.services.length);
+          } finally { clearTimeout(timeout); }
+          NODE
 
       - name: Build
         run: npm run build
