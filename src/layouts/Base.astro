@@ -34,7 +34,7 @@ const business: Record<string, unknown> = {
   image: ogImage,
 };
 if (SITE.legalName) business.legalName = SITE.legalName;
-if (SITE.vat) business.vatID = SITE.vat;
+if (SITE.vat) business.vatID = `IT${SITE.vat}`;
 if (SITE.phone) business.telephone = SITE.phone.tel;
 if (SITE.email) business.email = SITE.email;
 if (SITE.instagram) business.sameAs = [SITE.instagram];

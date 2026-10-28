@@ -24,6 +24,12 @@ export interface SiteData {
   /** Ragione sociale o nome e cognome del titolare (per privacy e footer). */
   legalName: string | null;
   vat: string | null;
+  /** Forma giuridica come da visura (es. "Impresa individuale"). */
+  legalForm: string | null;
+  /** Numero REA, es. "MC-300616". */
+  rea: string | null;
+  /** PEC del titolare: contatto per privacy e comunicazioni formali. */
+  pec: string | null;
   address: { street: string; postalCode: string; city: string; province: string; country: string } | null;
   phone: { display: string; tel: string } | null;
   /** Numero WhatsApp in formato internazionale senza + (es. 393331234567). */
@@ -42,8 +48,12 @@ const REAL: SiteData = {
   tagline: 'Manicure e nail art su appuntamento.',
   description:
     'Jenny Nails Studio è un salone dedicato alla cura delle unghie a Castelraimondo (MC): manicure, semipermanente, ricostruzione e nail art su appuntamento. Prenota su WhatsApp o con una telefonata.',
-  legalName: null,
-  vat: null,
+  // Dati d'impresa dalla visura CCIAA Marche (iscrizione 26/07/2024). Stessi dati di Impostazioni → Dati società nel gestionale.
+  legalName: 'Jenny Nails Studio di Azizi Juxhenia',
+  vat: '02067160438',
+  legalForm: 'Impresa individuale',
+  rea: 'MC-300616',
+  pec: 'juxhenia.azizi@pec.it',
   address: { street: 'Largo Rotabella, 1', postalCode: '62022', city: 'Castelraimondo', province: 'MC', country: 'IT' },
   phone: { display: '389 986 8381', tel: '+393899868381' },
   whatsappE164: '393899868381',
@@ -105,6 +115,15 @@ export const BOOK_HREF: string = BOOKING_ONLINE
 
 export const fullAddress = (): string | null =>
   SITE.address ? `${SITE.address.street}, ${SITE.address.postalCode} ${SITE.address.city} (${SITE.address.province})` : null;
+
+/** Riga legale del footer: denominazione, sede, P.IVA, REA, PEC (solo i dati presenti). */
+export const legalLine = (): string[] =>
+  [
+    SITE.legalName ?? SITE.name,
+    fullAddress(),
+    SITE.vat && `P.IVA ${SITE.vat}`,
+    SITE.rea && `REA ${SITE.rea}`,
+  ].filter((x): x is string => !!x);
 
 export const directionsHref = (): string | null =>
   SITE.address
