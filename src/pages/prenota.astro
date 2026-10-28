@@ -38,7 +38,7 @@ const wa = waLink(WA_HELLO);
 </Base>
 
 <script>
-  import { api, ApiError, h, slotPicker, whenLabel, euro, durationLabel, type Slot } from '../scripts/booking-client';
+  import { api, ApiError, h, slotPicker, whenLabel, euro, durationLabel, type Slot, type DaySummary } from '../scripts/booking-client';
 
   interface Service { id: number; category_id: number | null; name: string; description: string | null; price_cents: number | null; duration_min: number }
   interface Catalog {
@@ -130,6 +130,7 @@ const wa = waLink(WA_HELLO);
       const picker = slotPicker({
         days: Math.min(Math.max(cat.rules.max_advance_days, 1), 60),
         load: (date) => api<{ slots: Slot[] }>(API, `/availability?date=${date}&services=${ids}`),
+        loadDays: (from, count) => api<{ days: DaySummary[] }>(API, `/availability/days?from=${from}&days=${count}&services=${ids}`),
         onPick: (date, time) => { state.date = date; state.time = time; stepDetails(); },
       });
       const back = h('button', { type: 'button', class: 'linkbtn' }, '← Cambia trattamenti');

@@ -80,3 +80,7 @@ export const TRATTAMENTI: Trattamento[] = [
 
 export const waTextFor = (t: Trattamento): string =>
   `Ciao Jenny! Ti scrivo dal sito, vorrei prenotare: ${t.name}. Giorno preferito: `;
+
+/** Con la prenotazione online WhatsApp serve per le domande sul trattamento. */
+export const waInfoFor = (t: Trattamento): string =>
+  `Ciao Jenny! Ti scrivo dal sito, vorrei qualche informazione su: ${t.name}. `;
