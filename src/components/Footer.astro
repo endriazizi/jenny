@@ -11,7 +11,7 @@ const addr = fullAddress();
 <footer class="ftr">
   <div class="wrap grid">
     <div>
-      <a href="/" class="brand" aria-label="Jenny Nails Studio, home"><Wordmark size="lg" /></a>
+      <a href="/" class="brand" aria-label="Jenny Nails Studio, home"><span id="jenny-footer-mark"><Wordmark size="lg" /></span></a>
       <p class="tag">{SITE.tagline}</p>
     </div>
     {(addr || SITE.phone || WHATSAPP || SITE.email || SITE.instagram) && (
@@ -68,3 +68,21 @@ const addr = fullAddress();
   .ftr .credit a { color: var(--testo-2); }
   .credit .build { font-variant-numeric: tabular-nums; }
 </style>
+
+<script>
+  import { BOOKING_API } from '../data/booking';
+  const mark = document.getElementById('jenny-footer-mark');
+  const apiOrigin = new URL(BOOKING_API).origin;
+  fetch(BOOKING_API + '/catalog').then(r => r.ok ? r.json() : null).then(data => {
+    const path: unknown = data?.branding?.footer_url || data?.branding?.logo_url;
+    if (!mark || typeof path !== 'string' || !path.startsWith('/api/jenny/public/media/')) return;
+    if (!/^[a-f0-9]{24}[.](jpg|png|webp)$/.test(path.split('/').pop() || '')) return;
+    const img = document.createElement('img');
+    img.alt = 'Jenny Nails Studio';
+    img.width = 180;
+    img.height = 72;
+    img.style.cssText = 'max-width:180px;max-height:90px;width:auto;height:auto;object-fit:contain;';
+    img.onload = () => mark.replaceChildren(img);
+    img.src = apiOrigin + path;
+  }).catch(() => { /* footer statico predefinito */ });
+</script>
