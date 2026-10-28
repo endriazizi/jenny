@@ -9,9 +9,12 @@ const { size = 'sm' } = Astro.props;
 </span>
 
 <style>
-  .wm { display: inline-flex; flex-direction: column; line-height: 1; color: var(--inchiostro); }
-  .j { font-family: var(--serif); font-style: italic; font-weight: 500; font-size: 30px; letter-spacing: -0.02em; }
-  .s { font-size: 10.5px; font-weight: 700; letter-spacing: 0.32em; text-transform: uppercase; color: var(--malva); margin-top: 3px; padding-left: 2px; }
+  .wm { display: inline-flex; flex-direction: column; justify-content: center; line-height: 1; color: var(--inchiostro); min-height: 44px; min-width: 116px; width: max-content; max-width: 100%; flex: none; contain: layout; }
+  .wm .j, .wm .s { display: block; white-space: nowrap; }
+  .j { font-family: var(--serif); font-style: italic; font-weight: 500; font-size: clamp(27px, 2.6vw, 33px); letter-spacing: -0.02em; }
+  .s { font-size: clamp(9px, .85vw, 10.5px); font-weight: 700; letter-spacing: 0.26em; text-transform: uppercase; color: var(--malva); margin-top: 3px; padding-left: 2px; }
   .lg .j { font-size: 40px; }
   .lg .s { font-size: 12px; }
+  @media (max-width: 480px) { .wm { min-width: 110px; min-height: 42px; } .j { font-size: 29px; } .s { font-size: 9px; letter-spacing: .25em; } }
+  @media (min-width: 900px) { .wm { min-width: 125px; min-height: 48px; } }
 </style>
