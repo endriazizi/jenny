@@ -1,0 +1,50 @@
+---
+import Base from '../../layouts/Base.astro';
+---
+<Base title="Gestione appuntamenti · Jenny Nails" description="Area riservata Jenny Nails" noindex>
+  <section class="jn-admin">
+    <p class="eyebrow">Area riservata</p><h1>Appuntamenti Jenny</h1>
+    <p id="jn-msg" role="status" aria-live="polite"></p>
+    <form id="jn-login" class="jn-panel">
+      <h2>Accedi</h2><label>Utente<input name="identifier" autocomplete="username" required value="jenny" /></label>
+      <label>Password<input type="password" name="password" autocomplete="current-password" required /></label>
+      <button class="jn-primary">Accedi</button>
+      <p class="jn-muted">Accesso riservato. Se devi cambiare la password, utilizza il backoffice ENEA.</p>
+    </form>
+    <div id="jn-workspace" hidden>
+      <div class="jn-toolbar">
+        <label>Dal<input id="jn-from" type="date" /></label><label>Al<input id="jn-to" type="date" /></label>
+        <button id="jn-refresh" type="button">Aggiorna</button><button id="jn-new" type="button" class="jn-primary">+ Nuovo</button><button id="jn-logout" type="button">Esci</button>
+      </div>
+      <label>Cerca per nome, telefono o email<input id="jn-search" type="search" placeholder="Cerca appuntamenti" /></label>
+      <div class="jn-table-wrap"><table><thead><tr><th>Quando</th><th>Cliente</th><th>Trattamenti</th><th>Stato</th><th>Azioni</th></tr></thead><tbody id="jn-rows"></tbody></table></div>
+      <form id="jn-editor" class="jn-panel" hidden>
+        <h2 id="jn-editor-title">Nuovo appuntamento</h2>
+        <div class="jn-fields">
+          <label>Nome<input name="first_name" required /></label><label>Cognome<input name="last_name" /></label>
+          <label>Telefono<input name="phone" type="tel" /></label><label>Email<input name="email" type="email" /></label>
+          <label>Data<input name="date" type="date" required /></label><label>Ora<input name="time" type="time" required /></label>
+        </div>
+        <fieldset><legend>Trattamenti</legend><div id="jn-services" class="jn-services"></div></fieldset>
+        <label>Note interne<textarea name="internal_note" rows="3"></textarea></label>
+        <label class="jn-inline"><input name="notify" type="checkbox" checked /> Avvisa la cliente</label>
+        <label class="jn-inline"><input name="force" type="checkbox" /> Forza orario (solo se necessario)</label>
+        <div class="jn-actions"><button type="submit" class="jn-primary">Salva</button><button id="jn-close" type="button">Chiudi</button></div>
+      </form>
+    </div>
+  </section>
+</Base>
+<style>
+.jn-admin{max-width:1080px;margin:44px auto 88px;padding:0 20px;color:#3f3035}.jn-admin h1{font-size:clamp(28px,4vw,44px);margin:0 0 20px}.jn-admin h2{font-size:21px;margin:0 0 15px}
+.jn-panel,.jn-table-wrap{background:#fff;border:1px solid #e8d9dd;border-radius:17px;padding:18px;margin:14px 0;box-shadow:0 10px 35px #4c283009}#jn-login{max-width:440px}
+.jn-admin label{display:flex;flex-direction:column;gap:6px;font-size:14px;margin:8px 0;font-weight:600}.jn-admin input:not([type=checkbox]),.jn-admin textarea{padding:12px;border:1px solid #d9c5cd;border-radius:10px;width:100%;background:#fff;color:#2b2225;font:inherit}
+.jn-admin button{min-height:43px;padding:9px 13px;border-radius:10px;border:1px solid #d4bfc7;background:white;cursor:pointer;font:inherit}.jn-admin .jn-primary{background:#6b4052;color:white;border-color:#6b4052}
+.jn-toolbar,.jn-actions{display:flex;align-items:end;gap:9px;flex-wrap:wrap}.jn-toolbar label{min-width:135px}.jn-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 14px}.jn-table-wrap{overflow-x:auto}
+.jn-admin table{width:100%;border-collapse:collapse;font-size:14px}.jn-admin th,.jn-admin td{padding:13px 9px;text-align:left;border-bottom:1px solid #efeaeb;vertical-align:top}.jn-admin th{color:#7b6770}
+.jn-actions{gap:6px}.jn-actions button{min-height:38px}.jn-admin .jn-danger{color:#a13754;border-color:#e7b8c5}.jn-admin button:disabled{opacity:.5;cursor:wait}
+.jn-admin .jn-inline{display:flex;flex-direction:row;align-items:center}.jn-services{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:9px}.jn-services label{display:flex;flex-direction:row;align-items:center}.jn-muted{font-size:13px;color:#7b6770}.jn-admin #jn-msg:not(:empty){padding:12px;border-radius:10px;background:#f7e9ec;margin:12px 0}
+@media(max-width:640px){.jn-fields{grid-template-columns:1fr}.jn-admin table,.jn-admin tbody,.jn-admin tr,.jn-admin td{display:block;width:100%}.jn-admin thead{display:none}.jn-admin tr{padding:13px 0;border-bottom:1px solid #e8d9dd}.jn-admin td{border:0;padding:5px 0}.jn-admin td:before{content:attr(data-label) ': ';font-weight:700}.jn-toolbar label{flex:1}}
+</style>
+<script>
+import '../../scripts/jenny-admin';
+</script>
