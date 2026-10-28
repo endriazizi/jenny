@@ -1,3 +1,4 @@
+// @ts-nocheck
 const BASE='https://api.pizzerialalanterna.it/api';
 const $=(s)=>document.querySelector(s);
 const login=$('#jn-login'),space=$('#jn-workspace'),editor=$('#jn-editor'),rows=$('#jn-rows'),msg=$('#jn-msg');
