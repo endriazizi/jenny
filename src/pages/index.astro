@@ -268,11 +268,16 @@ const steps = [
     const filename = path.slice(mediaPrefix.length);
     if (!/^[a-f0-9]{24}[.](jpg|png|webp)$/.test(filename)) return;
     const img = document.createElement('img');
-    img.alt = 'Jenny Nails Studio';
+    img.alt = typeof data.branding.hero_alt === 'string' ? data.branding.hero_alt : 'Jenny Nails Studio';
+    const clamp = (n: unknown, min: number, max: number, fallback: number) =>
+      typeof n === 'number' && Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : fallback;
+    const x = clamp(data.branding.hero_x, 0, 100, 50);
+    const y = clamp(data.branding.hero_y, 0, 100, 50);
+    const zoom = clamp(data.branding.hero_zoom, 100, 200, 100);
     img.className = 'hero-img';
     img.width = 480;
     img.height = 600;
-    img.style.cssText = 'width:100%;height:auto;aspect-ratio:4/5;object-fit:cover;';
+    img.style.cssText = 'width:100%;height:auto;aspect-ratio:4/5;object-fit:cover;object-position:' + x + '% ' + y + '%;transform:scale(' + (zoom / 100) + ')';
     img.decoding = 'async';
     img.onload = () => { host.replaceChildren(img); };
     img.src = apiOrigin + path;
