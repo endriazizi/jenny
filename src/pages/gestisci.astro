@@ -93,10 +93,11 @@ const wa = waLink('Ciao Jenny! Ti scrivo per il mio appuntamento.');
       days: 60,
       load: (date) => api<{ slots: Slot[] }>(API, '/manage/availability', { token, date }),
       onPick: async (date, time) => {
-        if (!confirm(`Spostare l’appuntamento a ${whenLabel(`${date} ${time}:00`)}?`)) return;
+        if (!confirm(`Inviare a Jenny una richiesta per ${whenLabel(`${date} ${time}:00`)}? Il tuo appuntamento attuale resta valido fino all’approvazione.`)) return;
         err.textContent = '';
         try {
-          render(await api<PublicBooking>(API, '/manage/reschedule', { token, date, time }), 'Appuntamento spostato. Ti mandiamo un’email con il nuovo orario.');
+          await api(API, '/manage/request-reschedule', { token, date, time });
+          render(b, 'Richiesta inviata a Jenny. L’appuntamento non cambia finché non sarà approvato.');
         } catch (e) {
           err.textContent = (e as Error).message;
         }
@@ -104,8 +105,8 @@ const wa = waLink('Ciao Jenny! Ti scrivo per il mio appuntamento.');
     });
     const back = h('button', { type: 'button', class: 'linkbtn' }, '← Lascia com’è');
     back.addEventListener('click', () => render(b));
-    box.replaceChildren(h('div', { class: 'card panel' }, h('h2', {}, 'Scegli il nuovo orario'),
-      h('p', { class: 'muted small' }, `Adesso: ${whenLabel(b.starts_at)}. Il vecchio orario resta tuo finché non ne scegli uno nuovo.`), picker, err, back));
+    box.replaceChildren(h('div', { class: 'card panel' }, h('h2', {}, 'Richiedi un nuovo orario'),
+      h('p', { class: 'muted small' }, `Adesso: ${whenLabel(b.starts_at)}. L’appuntamento originale resta confermato fino alla risposta di Jenny.`), picker, err, back));
   }
 
   function askCancel(b: PublicBooking) {
