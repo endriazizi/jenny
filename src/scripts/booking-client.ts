@@ -78,10 +78,17 @@ export const durationLabel = (min: number) => {
 
 export interface Slot { time: string; staff_id: number }
 
-/** Striscia di giorni + orari liberi. `load` restituisce gli orari del giorno scelto. */
+/** Riepilogo di un giorno: chiuso, tutto occupato o quanti orari liberi. */
+export interface DaySummary { date: string; open: boolean; free: number; first: string | null }
+
+/**
+ * Striscia di giorni + orari liberi. `load` restituisce gli orari del giorno scelto.
+ * Con `loadDays` i giorni chiusi o pieni sono spenti e si apre da solo il primo giorno con posto.
+ */
 export function slotPicker(opts: {
   days: number;
   load: (date: string) => Promise<{ slots: Slot[] }>;
+  loadDays?: (from: string, count: number) => Promise<{ days: DaySummary[] }>;
   onPick: (date: string, time: string) => void;
 }) {
   const root = h('div', { class: 'picker' });
@@ -89,6 +96,7 @@ export function slotPicker(opts: {
   const slotsBox = h('div', { class: 'slots', 'aria-live': 'polite' });
   root.append(strip, slotsBox);
   const today = romeToday();
+  const buttons = new Map<string, HTMLButtonElement>();
   let req = 0;
 
   async function pickDay(date: string, btn: HTMLButtonElement) {
@@ -126,8 +134,40 @@ export function slotPicker(opts: {
       h('span', { class: 'mo' }, dayLabel(date, { month: 'short' })),
     );
     b.addEventListener('click', () => pickDay(date, b));
+    buttons.set(date, b);
     strip.append(b);
   }
   slotsBox.append(h('p', { class: 'muted' }, 'Scegli un giorno per vedere gli orari liberi.'));
+
+  /** Segna i giorni chiusi, pieni o quasi pieni; l'API ne dà al massimo 31 per volta. */
+  async function markDays() {
+    if (!opts.loadDays) return;
+    let picked = false;
+    for (let i = 0; i < opts.days; i += 31) {
+      let list: DaySummary[];
+      try {
+        ({ days: list } = await opts.loadDays(addDays(today, i), Math.min(31, opts.days - i)));
+      } catch {
+        return; // senza riepilogo la striscia funziona lo stesso, giorno per giorno
+      }
+      for (const d of list) {
+        const b = buttons.get(d.date);
+        if (!b) continue;
+        const tag = !d.open ? 'Chiuso' : !d.free ? 'Completo' : d.free <= 3 ? 'Ultimi posti' : '';
+        if (tag) b.append(h('span', { class: 'tag' }, tag));
+        if (!d.open || !d.free) {
+          b.disabled = true;
+          b.classList.add(d.open ? 'is-full' : 'is-closed');
+          b.setAttribute('aria-label', `${dayLabel(d.date)}, ${tag.toLowerCase()}`);
+        } else if (d.free <= 3) b.classList.add('is-few');
+        if (!picked && d.open && d.free) {
+          picked = true;
+          if (req === 0) void pickDay(d.date, b);
+        }
+      }
+    }
+    if (!picked) slotsBox.replaceChildren(h('p', { class: 'muted' }, 'Nei prossimi giorni è tutto prenotato. Scrivici: se si libera un posto ti avvisiamo.'));
+  }
+  void markDays();
   return root;
 }

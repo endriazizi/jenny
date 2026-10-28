@@ -3,7 +3,7 @@ import Base from '../layouts/Base.astro';
 import Icon from '../components/Icon.astro';
 import { SITE, waLink, BOOK_HREF } from '../data/site';
 import { BOOKING_ONLINE } from '../data/booking';
-import { TRATTAMENTI, waTextFor } from '../data/trattamenti';
+import { TRATTAMENTI, waTextFor, waInfoFor } from '../data/trattamenti';
 
 const site = Astro.site!;
 const breadcrumb = {
@@ -33,7 +33,8 @@ const anyPrice = TRATTAMENTI.some((t) => t.price);
 
   <section class="wrap list">
     {TRATTAMENTI.map((t) => {
-      const wa = waLink(waTextFor(t));
+      // Online: "Prenota" apre il calendario, WhatsApp diventa "Info". Spenta: si prenota su WhatsApp.
+      const wa = waLink(BOOKING_ONLINE ? waInfoFor(t) : waTextFor(t));
       const href = BOOKING_ONLINE ? `${BOOK_HREF}?t=${encodeURIComponent(t.name)}` : wa ?? BOOK_HREF;
       return (
         <article class="card row" id={t.slug}>
@@ -48,9 +49,16 @@ const anyPrice = TRATTAMENTI.some((t) => t.price);
               </p>
             )}
           </div>
-          <a class={wa && !BOOKING_ONLINE ? 'btn btn-wa' : 'btn btn-ghost'} href={href} rel={href.startsWith('http') ? 'noopener' : undefined}>
-            <Icon name={wa && !BOOKING_ONLINE ? 'message-circle' : 'calendar-heart'} size={20} />Prenota<span class="sr"> {t.name}</span>
-          </a>
+          <div class="acts">
+            <a class={BOOKING_ONLINE ? 'btn btn-primary' : wa ? 'btn btn-wa' : 'btn btn-ghost'} href={href} rel={href.startsWith('http') ? 'noopener' : undefined}>
+              <Icon name={wa && !BOOKING_ONLINE ? 'message-circle' : 'calendar-heart'} size={20} />Prenota<span class="sr"> {t.name}</span>
+            </a>
+            {BOOKING_ONLINE && wa && (
+              <a class="btn btn-wa" href={wa} rel="noopener">
+                <Icon name="message-circle" size={20} />Info<span class="sr"> su {t.name} su WhatsApp</span>
+              </a>
+            )}
+          </div>
         </article>
       );
     })}
@@ -78,12 +86,15 @@ const anyPrice = TRATTAMENTI.some((t) => t.price);
   .note { padding-bottom: 88px; display: flex; flex-direction: column; gap: 8px; font-size: 15px; }
   .note p { display: flex; gap: 8px; align-items: flex-start; }
   .note :global(.icon) { flex: none; margin-top: 3px; color: var(--malva); }
+  .acts { display: flex; flex-direction: column; gap: 8px; }
+  .acts .btn { justify-content: center; }
   .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   @media (max-width: 760px) {
     .top { padding-block: 32px 24px; }
     .row { grid-template-columns: auto 1fr; padding: 20px; gap: 14px 16px; align-items: start; }
     .ticon { width: 44px; height: 44px; }
-    .row .btn { grid-column: 1 / -1; }
+    .row .acts { grid-column: 1 / -1; flex-direction: row; }
+    .row .acts .btn { flex: 1; }
     h2 { font-size: 23px; }
     .note { padding-bottom: 48px; }
   }

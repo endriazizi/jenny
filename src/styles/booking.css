@@ -33,6 +33,11 @@
 .day strong { font-size: 22px; color: var(--inchiostro); font-family: var(--serif); font-weight: 500; }
 .day[aria-pressed='true'] { border-color: var(--malva); background: var(--malva); color: var(--bianco); }
 .day[aria-pressed='true'] strong { color: var(--bianco); }
+.day .tag { margin-top: 3px; font-size: 10px; line-height: 1.2; letter-spacing: .02em; text-transform: none; }
+.day:disabled { cursor: not-allowed; opacity: .45; background: transparent; }
+.day:disabled strong { color: var(--testo-2); }
+.day.is-few .tag { color: var(--malva); font-weight: 600; }
+.day.is-few[aria-pressed='true'] .tag { color: var(--bianco); }
 .slots { margin-top: 14px; min-height: 48px; }
 .grid-slots { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 8px; }
 .slot { min-height: 44px; border: 1.5px solid var(--bordo); border-radius: var(--pill); background: var(--bianco); font: inherit; font-weight: 700; cursor: pointer; font-variant-numeric: tabular-nums; }

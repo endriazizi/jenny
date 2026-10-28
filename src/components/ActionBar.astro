@@ -2,11 +2,12 @@
 import { SITE, WHATSAPP, waLink, WA_HELLO, BOOK_HREF, directionsHref } from '../data/site';
 import { BOOKING_ONLINE } from '../data/booking';
 import Icon from './Icon.astro';
-const wa = waLink(WA_HELLO);
+// Con la prenotazione online WhatsApp resta per le domande: "Info".
+const wa = waLink(BOOKING_ONLINE ? 'Ciao Jenny! Ti scrivo dal sito, vorrei qualche informazione.' : WA_HELLO);
 const dir = directionsHref();
 const items = [
   SITE.phone && { href: `tel:${SITE.phone.tel}`, icon: 'phone', label: 'Chiama' },
-  wa && { href: wa, icon: 'message-circle', label: 'WhatsApp', cls: 'wa', ext: true },
+  wa && { href: wa, icon: 'message-circle', label: BOOKING_ONLINE ? 'Info' : 'WhatsApp', cls: 'wa', ext: true },
   (BOOKING_ONLINE || !WHATSAPP) && { href: BOOK_HREF, icon: 'calendar-heart', label: 'Prenota', cls: 'main' },
   { href: '/trattamenti/', icon: 'sparkles', label: 'Trattamenti' },
   dir && { href: dir, icon: 'map-pin', label: 'Dove siamo', ext: true },
