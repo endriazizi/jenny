@@ -147,7 +147,8 @@ const wa = waLink('Ciao Jenny! Ti scrivo per il mio appuntamento.');
       ev.preventDefault();
       yes.disabled = true;
       try {
-        render(await api<PublicBooking>(API, '/manage/cancel', { token, reason: reason.value }), 'Richiesta elaborata. Se è necessaria l’approvazione di Jenny, il tuo appuntamento resta valido fino alla conferma.');
+        await api(API, '/manage/cancel', { token, reason: reason.value });
+        await load();
       } catch (e) {
         yes.disabled = false;
         err.textContent = (e as Error).message;
