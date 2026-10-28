@@ -2,7 +2,7 @@
 import InstallApp from './InstallApp.astro';
 import Wordmark from './Wordmark.astro';
 import Icon from './Icon.astro';
-import { SITE, WHATSAPP, waLink, WA_HELLO, fullAddress } from '../data/site';
+import { SITE, WHATSAPP, waLink, WA_HELLO, fullAddress, legalLine } from '../data/site';
 import { BUILD_VERSION, BUILD_SHA } from '../data/build';
 const year = new Date().getFullYear();
 const wa = waLink(WA_HELLO);
@@ -34,7 +34,11 @@ const addr = fullAddress();
     <InstallApp />
   </div>
   <div class="wrap legal">
-    <p>© {year} {SITE.legalName ?? SITE.name}{SITE.vat && ` · P.IVA ${SITE.vat}`}</p>
+    <p class="company">
+      <span>© {year}</span>
+      {legalLine().map((part) => <><span aria-hidden="true">·</span><span>{part}</span></>)}
+      {SITE.pec && <><span aria-hidden="true">·</span><span>PEC <a href={`mailto:${SITE.pec}`}>{SITE.pec}</a></span></>}
+    </p>
     <p class="credit">
       {SITE.credits.href
         ? <a href={SITE.credits.href} rel="noopener">{SITE.credits.label}</a>
@@ -58,6 +62,8 @@ const addr = fullAddress();
   .ic :global(.icon) { color: var(--malva); flex: none; margin-top: 3px; }
   .h { color: var(--oro-testo); font-weight: 700; font-size: 13px; letter-spacing: .12em; text-transform: uppercase; margin-bottom: 10px; }
   .legal { border-top: 1px solid var(--cipria-2); margin-top: 40px; padding-block: 20px; font-size: 13px; display: flex; flex-direction: column; gap: 6px; }
+  .company { display: flex; flex-wrap: wrap; gap: 2px 8px; color: var(--testo-2); }
+  .ftr .company a { color: var(--testo-2); text-decoration: underline; text-underline-offset: 2px; }
   .credit { display: flex; flex-wrap: wrap; gap: 4px 8px; font-size: 12.5px; }
   .ftr .credit a { color: var(--testo-2); }
   .credit .build { font-variant-numeric: tabular-nums; }
