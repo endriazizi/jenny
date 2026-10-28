@@ -42,7 +42,7 @@ const steps = [
           <p class="call muted">Preferisci chiamare? <a href={`tel:${SITE.phone.tel}`}>{SITE.phone.display}</a></p>
         )}
       </div>
-      <div class="hero-art">
+      <div class="hero-art" id="jenny-dynamic-hero">
         {hero ? (
           <Image src={hero.src} alt={hero.alt} widths={[480, 720, 960]} sizes="(max-width: 899px) 100vw, 480px" loading="eager" class="hero-img" />
         ) : (
@@ -256,3 +256,25 @@ const steps = [
     .final { padding: 32px 20px; }
   }
 </style>
+
+<script>
+  import { BOOKING_API } from '../data/booking';
+  const host = document.getElementById('jenny-dynamic-hero');
+  const apiOrigin = new URL(BOOKING_API).origin;
+  const mediaPrefix = '/api/jenny/public/media/';
+  fetch(BOOKING_API + '/catalog').then(r => r.ok ? r.json() : null).then(data => {
+    const path: unknown = data?.branding?.hero_url;
+    if (!host || typeof path !== 'string' || !path.startsWith(mediaPrefix)) return;
+    const filename = path.slice(mediaPrefix.length);
+    if (!/^[a-f0-9]{24}[.](jpg|png|webp)$/.test(filename)) return;
+    const img = document.createElement('img');
+    img.alt = 'Jenny Nails Studio';
+    img.className = 'hero-img';
+    img.width = 480;
+    img.height = 600;
+    img.style.cssText = 'width:100%;height:auto;aspect-ratio:4/5;object-fit:cover;';
+    img.decoding = 'async';
+    img.onload = () => { host.replaceChildren(img); };
+    img.src = apiOrigin + path;
+  }).catch(() => { /* mantieni la hero predefinita */ });
+</script>
