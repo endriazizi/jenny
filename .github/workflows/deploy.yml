@@ -45,7 +45,8 @@ jobs:
           const ctrl = new AbortController();
           const timeout = setTimeout(() => ctrl.abort(), 10000);
           try {
-            const res = await fetch(base.replace(/\\/+$/, '') + '/catalog', { signal: ctrl.signal, headers: { Accept: 'application/json' } });
+            const url = (base.endsWith('/') ? base.slice(0, -1) : base) + '/catalog';
+            const res = await fetch(url, { signal: ctrl.signal, headers: { Accept: 'application/json' } });
             if (!res.ok) throw new Error('Catalog HTTP ' + res.status);
             const data = await res.json();
             if (!data || !Array.isArray(data.services) || !data.rules) throw new Error('Risposta catalogo incompleta');
