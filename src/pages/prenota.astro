@@ -43,7 +43,7 @@ const wa = waLink(WA_HELLO);
   interface Service { id: number; category_id: number | null; name: string; description: string | null; price_cents: number | null; duration_min: number }
   interface Catalog {
     salon: { name: string; phone: string | null };
-    rules: { max_advance_days: number; customer_change_limit_h: number; auto_confirm: boolean; privacy_version: string; whatsapp_available: boolean };
+    rules: { max_advance_days: number; customer_change_limit_h: number; auto_confirm: boolean; privacy_version: string; whatsapp_available: boolean; public_show_price?: boolean; public_show_duration?: boolean };
     categories: { id: number; name: string }[];
     services: Service[];
   }
@@ -107,20 +107,20 @@ const wa = waLink(WA_HELLO);
       const refresh = () => {
         const t = totals();
         next.disabled = !state.selected.size;
-        sumText.textContent = state.selected.size ? `${durationLabel(t.min)} · ${euro(t.price)}` : 'Scegli almeno un trattamento';
+        sumText.textContent = state.selected.size ? [cat.rules.public_show_duration ? durationLabel(t.min) : '', cat.rules.public_show_price ? euro(t.price) : ''].filter(Boolean).join(' · ') || `${state.selected.size} trattament${state.selected.size === 1 ? 'o' : 'i'} selezionati` : 'Scegli almeno un trattamento';
       };
       const blocks = groups.filter((x) => x.list.length).map(({ g, list }) =>
         h('div', { class: 'cat' }, h('h3', {}, g.name), ...list.map((s) => {
           const box = h('input', { type: 'checkbox', checked: state.selected.has(s.id) });
           box.addEventListener('change', () => { box.checked ? state.selected.add(s.id) : state.selected.delete(s.id); refresh(); });
           return h('label', { class: 'svc' }, box,
-            h('span', { class: 't' }, h('strong', {}, s.name), s.description && h('span', { class: 'm' }, s.description), h('span', { class: 'm' }, durationLabel(s.duration_min))),
-            h('span', { class: 'p' }, euro(s.price_cents)));
+            h('span', { class: 't' }, h('strong', {}, s.name), s.description && h('span', { class: 'm' }, s.description), cat.rules.public_show_duration && h('span', { class: 'm' }, durationLabel(s.duration_min))),
+            cat.rules.public_show_price && h('span', { class: 'p' }, euro(s.price_cents)));
         })));
       next.addEventListener('click', stepSlot);
       refresh();
       show(1, h('div', { class: 'card panel' }, h('h2', {}, 'Cosa ti facciamo?'),
-        h('p', { class: 'muted small' }, 'Puoi sceglierne più di uno: li facciamo uno dopo l’altro. I prezzi sono di listino, eventuali extra si concordano in salone.'),
+        h('p', { class: 'muted small' }, cat.rules.public_show_price ? 'Puoi sceglierne più di uno: li facciamo uno dopo l’altro. I prezzi sono di listino, eventuali extra si concordano in salone.' : 'Puoi sceglierne più di uno: li facciamo uno dopo l’altro.'),
         ...blocks, h('div', { class: 'sum' }, sumText, next)));
     }
 
@@ -136,7 +136,7 @@ const wa = waLink(WA_HELLO);
       const back = h('button', { type: 'button', class: 'linkbtn' }, '← Cambia trattamenti');
       back.addEventListener('click', stepServices);
       show(2, h('div', { class: 'card panel' }, h('h2', {}, 'Quando vieni?'),
-        h('p', { class: 'muted small' }, `Durata prevista: ${durationLabel(totals().min)}.`), picker, back));
+        cat.rules.public_show_duration && h('p', { class: 'muted small' }, `Durata prevista: ${durationLabel(totals().min)}.`), picker, back));
     }
 
     // 3 · Dati e consensi
@@ -245,7 +245,7 @@ const wa = waLink(WA_HELLO);
       view.replaceChildren(h('div', { class: 'card panel' },
         h('p', { class: 'ok' }, pending ? 'Richiesta inviata' : 'Appuntamento confermato'),
         h('h2', {}, whenLabel(b.starts_at)),
-        h('div', { class: 'recap' }, h('ul', {}, ...b.items.map((i) => h('li', {}, i.name))), h('span', { class: 'small' }, `Totale di listino: ${euro(b.total_cents)}`)),
+        h('div', { class: 'recap' }, h('ul', {}, ...b.items.map((i) => h('li', {}, i.name))), cat.rules.public_show_price && h('span', { class: 'small' }, `Totale di listino: ${euro(b.total_cents)}`)),
         h('p', {}, pending
           ? 'Jenny conferma a breve: ti arriva un’email quando l’appuntamento è confermato.'
           : 'Ti abbiamo mandato un’email di conferma. Ti ricordiamo l’appuntamento il giorno prima e un’ora prima.'),
