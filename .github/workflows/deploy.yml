@@ -22,7 +22,7 @@ jobs:
       SITE_URL: ${{ vars.SITE_URL }}
       # Prenotazione online: PUBLIC_BOOKING_ONLINE=1 quando l'API Jenny è attiva (vedi docs/PRENOTAZIONE.md)
       PUBLIC_BOOKING_ONLINE: '1'
-      PUBLIC_BOOKING_API: ${{ vars.PUBLIC_BOOKING_API }}
+      PUBLIC_BOOKING_API: ${{ vars.PUBLIC_BOOKING_API || 'https://api.pizzerialalanterna.it/api/jenny/public' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -49,7 +49,7 @@ jobs:
             const res = await fetch(url, { signal: ctrl.signal, headers: { Accept: 'application/json' } });
             if (!res.ok) throw new Error('Catalog HTTP ' + res.status);
             const data = await res.json();
-            if (!data || !Array.isArray(data.services) || !data.rules) throw new Error('Risposta catalogo incompleta');
+            if (!data || !Array.isArray(data.services) || !data.services.length || !data.rules) throw new Error('Catalogo incompleto o senza servizi prenotabili');
             console.log('Catalogo Jenny disponibile, servizi:', data.services.length);
           } finally { clearTimeout(timeout); }
           NODE
