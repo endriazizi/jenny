@@ -85,6 +85,33 @@ const wa = waLink('Ciao Jenny! Ti scrivo per il mio appuntamento.');
       panel.append(h('p', { class: 'muted small' }, 'Da qui non si può più modificare: per cambiamenti scrivici o chiamaci.'));
     }
     box.replaceChildren(panel);
+    api<{ id: number; status: string; requested_start?: string; counteroffer_start?: string } | null>(
+      API, '/manage/pending-change', { token }).then((req) => {
+      if (!req || !['pending', 'counteroffered'].includes(req.status)) return;
+      const note = h('div', { class: 'card panel' },
+        h('h3', {}, req.status === 'pending' ? 'Richiesta in attesa di Jenny' : 'Nuova proposta di Jenny'),
+        h('p', {}, req.status === 'pending'
+          ? 'Il tuo appuntamento resta invariato fino alla risposta.'
+          : 'Jenny propone: ' + whenLabel(req.counteroffer_start || '')));
+      if (req.status === 'counteroffered') {
+        const yes = h('button', { class: 'btn btn-primary', type: 'button' }, 'Accetta il nuovo orario');
+        const no = h('button', { class: 'btn btn-ghost', type: 'button' }, 'Rifiuta');
+        const send = async (accept: boolean) => {
+          yes.disabled = true; no.disabled = true;
+          try {
+            await api(API, '/manage/respond-counteroffer', { token, request_id: req.id, accept });
+            await load();
+          } catch (err) {
+            yes.disabled = false; no.disabled = false;
+            note.append(h('p', { class: 'err', role: 'alert' }, (err as Error).message));
+          }
+        };
+        yes.addEventListener('click', () => send(true));
+        no.addEventListener('click', () => send(false));
+        note.append(h('div', { class: 'actions' }, yes, no));
+      }
+      box.append(note);
+    }).catch(() => { /* La prenotazione resta visualizzabile. */ });
   }
 
   function reschedule(b: PublicBooking) {
@@ -120,7 +147,7 @@ const wa = waLink('Ciao Jenny! Ti scrivo per il mio appuntamento.');
       ev.preventDefault();
       yes.disabled = true;
       try {
-        render(await api<PublicBooking>(API, '/manage/cancel', { token, reason: reason.value }), 'Appuntamento annullato. Grazie di averci avvisato.');
+        render(await api<PublicBooking>(API, '/manage/cancel', { token, reason: reason.value }), 'Richiesta elaborata. Se è necessaria l’approvazione di Jenny, il tuo appuntamento resta valido fino alla conferma.');
       } catch (e) {
         yes.disabled = false;
         err.textContent = (e as Error).message;
