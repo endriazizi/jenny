@@ -26,6 +26,7 @@ function render(){
   td(tr,'Trattamenti',(b.items||[]).map(i=>i.name).join(', '));td(tr,'Stato',b.status);
   const cell=td(tr,'Azioni',''),buttons=element('div',null,'jn-actions');cell.append(buttons);
   action(buttons,'Modifica',()=>openEditor(b));
+  action(buttons,'Elimina',()=>remove(b),'jn-danger');
   if(['pending','confirmed'].includes(b.status))action(buttons,'Annulla',()=>cancel(b),'jn-danger');
   rows.append(tr);
  }
@@ -66,6 +67,12 @@ function openEditor(b=null){
 }
 $('#jn-new').addEventListener('click',()=>openEditor());
 $('#jn-close').addEventListener('click',()=>{editor.hidden=true;});
+async function remove(b){
+ if(busy||!confirm('Sei sicuro di voler eliminare definitivamente l’appuntamento di '+[b.first_name,b.last_name].filter(Boolean).join(' ')+'? Questa operazione è irreversibile.'))return;
+ busy=true;
+ try{await request('/jenny/admin/bookings/'+b.id,{method:'DELETE'});await reload();notice('Appuntamento eliminato definitivamente.');}
+ catch(err){notice(err.message)}finally{busy=false;}
+}
 async function cancel(b){
  if(busy||!confirm('Annullare l’appuntamento di '+[b.first_name,b.last_name].filter(Boolean).join(' ')+'? Rimarrà nello storico.'))return;
  busy=true;
