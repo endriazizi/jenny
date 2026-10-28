@@ -1,5 +1,5 @@
 # Build Astro e pubblicazione del sito compilato sul ramo "deploy" (come enea-sito).
-# Trigger manuale tramite push su main: ricompila e aggiorna il branch deploy.
+# Trigger tramite push su main: ricompila e aggiorna il branch deploy (CRUD Jenny, eliminazione confermata).
 # Plesk (estensione Git) scarica il ramo "deploy" nella cartella httpdocs del dominio.
 name: Build e deploy
 
