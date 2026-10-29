@@ -11,7 +11,7 @@ const addr = fullAddress();
 <footer class="ftr">
   <div class="wrap grid">
     <div>
-      <a href="/" class="brand" aria-label="Jenny Nails Studio, home"><span class="footer-mark"><Wordmark size="sm" /></span></a>
+      <a href="/" class="brand" aria-label="Jenny Nails Studio, home"><span class="footer-mark"><Wordmark size="lg" /></span></a>
       <p class="tag">{SITE.tagline}</p>
     </div>
     {(addr || SITE.phone || WHATSAPP || SITE.email || SITE.instagram) && (
@@ -56,7 +56,7 @@ const addr = fullAddress();
   .ftr a { color: var(--inchiostro); text-decoration: none; }
   .ftr a:hover { color: var(--malva); text-decoration: underline; }
   .brand { display: inline-flex; margin-bottom: 14px; align-items: center; border-radius: 14px; }
-  .footer-mark { display: inline-flex; width: 130px; min-height: 46px; border-radius: 14px; overflow: hidden; align-items: center; }
+  .footer-mark { display: inline-flex; width: max-content; max-width: 145px; min-height: 46px; border-radius: 14px; overflow: hidden; align-items: center; }
   .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 32px; }
   .grid p + p { margin-top: 6px; }
   .ic { display: flex; gap: 10px; align-items: flex-start; }
