@@ -203,14 +203,57 @@ const wa = waLink(WA_HELLO);
       const err = h('p', { class: 'err', role: 'alert' });
       const timer = h('p', { class: 'muted small' });
       const ok = h('button', { type: 'submit', class: 'btn btn-primary' }, 'Conferma');
+      const displayedAddress = h('strong', {}, address);
+      const editEmail = h('input', { type: 'email', value: address, required: true, maxlength: 190, autocomplete: 'email', inputmode: 'email', 'aria-label': 'Indirizzo email corretto' });
+      const editPanel = h('div', { hidden: true }, h('label', { class: 'f' }, 'Correggi il tuo indirizzo email', editEmail));
+      const correct = h('button', { type: 'button', class: 'linkbtn' }, 'Correggi email');
+      correct.addEventListener('click', () => { editPanel.hidden = !editPanel.hidden; ok.disabled = !editPanel.hidden || Date.now() >= state.expires; if (!editPanel.hidden) editEmail.focus(); });
+      const resend = h('button', { type: 'button', class: 'btn btn-ghost' }, 'Invia di nuovo il codice');
+      const feedback = h('p', { class: 'small', role: 'status' });
+      let retryAt = Date.now() + 60_000;
+      let sending = false;
+      const refreshResend = () => {
+        const wait = Math.max(0, Math.ceil((retryAt - Date.now()) / 1000));
+        resend.disabled = sending || !!wait || Date.now() >= state.expires;
+        resend.textContent = wait ? `Rinvia codice tra ${wait}s` : editPanel.hidden ? 'Invia di nuovo il codice' : 'Salva email e invia codice';
+      };
+      refreshResend();
+      resend.addEventListener('click', async () => {
+        err.textContent = ''; feedback.textContent = '';
+        if (!editPanel.hidden && !editEmail.checkValidity()) { editEmail.reportValidity(); return; }
+        const targetEmail = editPanel.hidden ? address : editEmail.value.trim();
+        code.value = '';
+        sending = true; ok.disabled = true; correct.disabled = true; editEmail.disabled = true; refreshResend();
+        try {
+          const out = await api<{ email: string }>(API, '/bookings/resend-otp', {
+            token: state.token, email: targetEmail,
+          });
+          address = out.email;
+          displayedAddress.textContent = address; editEmail.value = address; editPanel.hidden = true;
+          code.value = '';
+          feedback.textContent = 'Nuovo codice inviato. Usa solo l’ultimo codice ricevuto.';
+          code.focus();
+        } catch (e) {
+          if (e instanceof ApiError && e.code === 'email_failed') {
+            address = targetEmail.trim().toLowerCase(); displayedAddress.textContent = address;
+          }
+          err.textContent = (e as Error).message;
+        } finally {
+          retryAt = Date.now() + 60_000;
+          sending = false; correct.disabled = false; editEmail.disabled = false;
+          ok.disabled = !editPanel.hidden || Date.now() >= state.expires; refreshResend();
+        }
+      });
       const tick = setInterval(() => {
+        refreshResend();
         const left = Math.max(0, Math.round((state.expires - Date.now()) / 1000));
         timer.textContent = left ? `Teniamo l’orario per te ancora ${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}.` : 'Tempo scaduto: scegli di nuovo un orario.';
         if (!left) { clearInterval(tick); ok.disabled = true; }
       }, 1000);
-      const form = h('form', {}, h('label', { class: 'f' }, 'Codice', code), timer, err, h('div', { class: 'actions' }, ok));
+      const form = h('form', {}, h('label', { class: 'f' }, 'Codice', code), timer, err, feedback, h('div', { class: 'actions' }, ok, correct), editPanel, resend);
       form.addEventListener('submit', async (ev) => {
         ev.preventDefault();
+        if (sending || Date.now() >= state.expires) return;
         err.textContent = '';
         if (!/^\d{6}$/.test(code.value.trim())) return void (err.textContent = 'Il codice ha 6 cifre.');
         ok.disabled = true;
@@ -231,7 +274,7 @@ const wa = waLink(WA_HELLO);
         }
       });
       show(4, h('div', { class: 'card panel' }, h('h2', {}, 'Controlla la tua email'),
-        h('p', {}, 'Abbiamo mandato un codice di 6 cifre a ', h('strong', {}, address), '. Scrivilo qui per confermare. Se non lo trovi guarda anche nello spam.'), form));
+        h('p', {}, 'Abbiamo mandato un codice di 6 cifre a ', displayedAddress, '. Scrivilo qui per confermare. Se non lo trovi guarda anche nello spam.'), form));
       code.focus();
     }
 
