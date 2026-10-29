@@ -110,4 +110,33 @@ try {
     await context.close();
     console.log('PASS public review '+scenario.rating+' stars');
   }
+  for (const googleAvailable of [true, false]) {
+    const context=await browser.newContext(devices['iPhone 13']);
+    const page=await context.newPage();let saved=false;let writes=0;
+    await page.route('**/api/jenny/public/reviews/landing',route=>route.fulfill({
+      status:200,contentType:'application/json',headers:{'access-control-allow-origin':'*'},
+      body:JSON.stringify({feedback_submitted:saved,feedback_rating:saved?5:null,google_available:googleAvailable})}));
+    await page.route('**/api/jenny/public/reviews/feedback',async route=>{
+      writes++;saved=true;await route.abort('failed');
+    });
+    await page.goto(base+'/recensione/#'+token,{waitUntil:'domcontentloaded'});
+    await page.locator('input[name=rating]').nth(4).check({force:true});
+    await page.getByRole('button',{name:'Invia feedback privato'}).click();
+    await page.getByRole('heading',{name:/Grazie per il tuo feedback/}).waitFor();
+    assert.equal(writes,1,'lost response must not cause a duplicate feedback write');
+    assert.equal(await page.getByRole('link',{name:/Scrivi una recensione su Google/}).count(),googleAvailable?1:0,'no Google CTA without a valid configured destination');
+    await context.close();
+    console.log('PASS saved feedback recovery; Google configured='+googleAvailable);
+  }
+  {
+    const context=await browser.newContext(devices['Pixel 7']);const page=await context.newPage();
+    await page.route('**/api/jenny/public/reviews/landing',route=>route.fulfill({
+      status:404,contentType:'application/json',headers:{'access-control-allow-origin':'*'},
+      body:JSON.stringify({error:'not_found',message:'Link non disponibile.'})}));
+    await page.goto(base+'/recensione/#'+token,{waitUntil:'domcontentloaded'});
+    await page.getByText('Link non disponibile.',{exact:true}).waitFor();
+    assert.equal(await page.locator('textarea,input[name=rating]').count(),0,'revoked link cannot accept feedback');
+    await context.close();console.log('PASS revoked personal link');
+  }
 } finally {await browser.close();}
+
