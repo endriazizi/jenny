@@ -47,6 +47,7 @@ const wa = waLink(WA_HELLO);
     categories: { id: number; name: string }[];
     services: Service[];
   }
+  interface Customer { first_name: string; last_name: string; email: string; phone: string | null }
   interface PublicBooking { status: string; starts_at: string; items: { name: string; price_cents: number | null; duration_min: number }[]; total_cents: number | null }
 
   const app = document.getElementById('app');
@@ -55,7 +56,7 @@ const wa = waLink(WA_HELLO);
   function start(app: HTMLElement) {
     const API = app.dataset.api!;
     const view = document.getElementById('view')!;
-    const state = { selected: new Set<number>(), date: '', time: '', token: '', expires: 0 };
+    const state = { selected: new Set<number>(), date: '', time: '', token: '', expires: 0, customer: { first_name: '', last_name: '', email: '', phone: null } as Customer };
     let cat: Catalog;
 
     const setStep = (n: number) =>
@@ -67,6 +68,7 @@ const wa = waLink(WA_HELLO);
       });
     const show = (n: number, ...nodes: Node[]) => {
       setStep(n);
+      app.classList.toggle('bk-confirming', n === 4);
       view.replaceChildren(...nodes);
       app.scrollIntoView({ behavior: 'smooth', block: 'start' });
     };
@@ -147,6 +149,10 @@ const wa = waLink(WA_HELLO);
       const email = h('input', { type: 'email', name: 'email', required: true, maxlength: 190, autocomplete: 'email', inputmode: 'email' });
       const phone = h('input', { type: 'tel', name: 'phone', maxlength: 20, autocomplete: 'tel', inputmode: 'tel', placeholder: '+39 …' });
       const note = h('textarea', { name: 'note', rows: 3, maxlength: 500 });
+      first.value = state.customer.first_name;
+      last.value = state.customer.last_name;
+      email.value = state.customer.email;
+      phone.value = state.customer.phone || '';
       const privacy = h('input', { type: 'checkbox', required: true });
       const waBox = h('input', { type: 'checkbox' });
       const mkBox = h('input', { type: 'checkbox' });
@@ -181,6 +187,7 @@ const wa = waLink(WA_HELLO);
             customer: { first_name: first.value, last_name: last.value, email: email.value, phone: phone.value },
             consents: { privacy_notice: true, whatsapp: waBox.checked, marketing: mkBox.checked, privacy_version: app.dataset.privacy },
           });
+          state.customer = { first_name: first.value.trim(), last_name: last.value.trim(), email: email.value.trim().toLowerCase(), phone: phone.value.trim() || null };
           state.token = out.token;
           state.expires = Date.now() + out.expires_in_min * 60_000;
           stepCode(email.value);
@@ -197,84 +204,120 @@ const wa = waLink(WA_HELLO);
       first.focus();
     }
 
-    // 4 · Codice email
-    function stepCode(address: string) {
+    // 4 · Review customer details and verify the email on the same hold.
+    function stepCode(_address: string) {
       const code = h('input', { class: 'code', type: 'text', inputmode: 'numeric', autocomplete: 'one-time-code', maxlength: 6, pattern: '[0-9]{6}', 'aria-label': 'Codice di 6 cifre' });
       const err = h('p', { class: 'err', role: 'alert' });
-      const timer = h('p', { class: 'muted small' });
-      const ok = h('button', { type: 'submit', class: 'btn btn-primary' }, 'Conferma');
-      const displayedAddress = h('strong', {}, address);
-      const editEmail = h('input', { type: 'email', value: address, required: true, maxlength: 190, autocomplete: 'email', inputmode: 'email', 'aria-label': 'Indirizzo email corretto' });
-      const editPanel = h('div', { hidden: true }, h('label', { class: 'f' }, 'Correggi il tuo indirizzo email', editEmail));
-      const correct = h('button', { type: 'button', class: 'linkbtn' }, 'Correggi email');
-      correct.addEventListener('click', () => { editPanel.hidden = !editPanel.hidden; ok.disabled = !editPanel.hidden || Date.now() >= state.expires; if (!editPanel.hidden) editEmail.focus(); });
-      const resend = h('button', { type: 'button', class: 'btn btn-ghost' }, 'Invia di nuovo il codice');
       const feedback = h('p', { class: 'small', role: 'status' });
+      const timer = h('p', { class: 'muted small' });
+      const summary = h('dl', { class: 'customer-summary' });
+      const address = h('strong', { class: 'otp-address' }, state.customer.email);
+      const ok = h('button', { type: 'submit', class: 'btn btn-primary' }, cat.rules.auto_confirm ? 'Conferma appuntamento' : 'Verifica e invia richiesta');
+      const correct = h('button', { type: 'button', class: 'linkbtn' }, 'Modifica dati');
+      const resend = h('button', { type: 'button', class: 'btn btn-ghost' }, 'Rinvia codice');
+      const first = h('input', { type: 'text', required: true, maxlength: 80, autocomplete: 'given-name' });
+      const last = h('input', { type: 'text', required: true, maxlength: 80, autocomplete: 'family-name' });
+      const email = h('input', { type: 'email', required: true, maxlength: 190, autocomplete: 'email', inputmode: 'email' });
+      const phone = h('input', { type: 'tel', maxlength: 20, autocomplete: 'tel', inputmode: 'tel' });
+      const save = h('button', { type: 'submit', class: 'btn btn-primary' }, 'Salva dati');
+      const cancel = h('button', { type: 'button', class: 'linkbtn' }, 'Annulla');
+      const field = (label: string, input: HTMLInputElement) => h('label', { class: 'f' }, label, input);
+      const editForm = h('form', { hidden: true }, field('Nome', first), field('Cognome', last), field('Cellulare (facoltativo)', phone), field('Email', email), h('div', { class: 'actions' }, save, cancel));
+      const verifyForm = h('form', {}, h('label', { class: 'f' }, 'Codice di 6 cifre', code), ok);
+      const again = h('button', { type: 'button', class: 'btn btn-ghost', hidden: true }, 'Scegli un nuovo orario');
       let retryAt = Date.now() + 60_000;
-      let sending = false;
-      const refreshResend = () => {
+      let busy = false;
+      let terminal = false;
+      const emailChanged = () => email.value.trim().toLowerCase() !== state.customer.email;
+      const refresh = () => {
+        const expired = Date.now() >= state.expires;
         const wait = Math.max(0, Math.ceil((retryAt - Date.now()) / 1000));
-        resend.disabled = sending || !!wait || Date.now() >= state.expires;
-        resend.textContent = wait ? `Rinvia codice tra ${wait}s` : editPanel.hidden ? 'Invia di nuovo il codice' : 'Salva email e invia codice';
+        const editing = !editForm.hidden;
+        ok.disabled = busy || terminal || expired || editing;
+        resend.disabled = busy || terminal || expired || editing || wait > 0;
+        resend.textContent = wait ? `Rinvia codice tra ${wait}s` : 'Rinvia codice';
+        save.disabled = busy || terminal || expired || (emailChanged() && wait > 0);
+        save.textContent = emailChanged() ? (wait ? `Invia nuovo codice tra ${wait}s` : 'Salva e invia nuovo codice') : 'Salva dati';
+        correct.disabled = busy || terminal || expired;
+        cancel.disabled = busy;
+        for (const input of [first, last, email, phone]) input.disabled = busy;
+        again.hidden = !(expired || terminal);
+        const left = Math.max(0, Math.ceil((state.expires - Date.now()) / 1000));
+        timer.textContent = left ? `Orario riservato ancora per ${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}.` : 'Tempo scaduto. Scegli di nuovo un orario; i tuoi dati restano disponibili in questa sessione.';
       };
-      refreshResend();
-      resend.addEventListener('click', async () => {
-        err.textContent = ''; feedback.textContent = '';
-        if (!editPanel.hidden && !editEmail.checkValidity()) { editEmail.reportValidity(); return; }
-        const targetEmail = editPanel.hidden ? address : editEmail.value.trim();
-        code.value = '';
-        sending = true; ok.disabled = true; correct.disabled = true; editEmail.disabled = true; refreshResend();
+      const renderSummary = () => {
+        summary.replaceChildren(...[
+          ['Nome e cognome', state.customer.first_name + ' ' + state.customer.last_name],
+          ['Cellulare', state.customer.phone || 'Non indicato'],
+          ['Email', state.customer.email],
+        ].flatMap(([label, value]) => [h('dt', {}, label), h('dd', {}, value)]));
+        address.textContent = state.customer.email;
+      };
+      correct.addEventListener('click', () => {
+        first.value = state.customer.first_name; last.value = state.customer.last_name;
+        phone.value = state.customer.phone || ''; email.value = state.customer.email;
+        editForm.hidden = false; verifyForm.hidden = true; refresh(); first.focus();
+      });
+      cancel.addEventListener('click', () => { editForm.hidden = true; verifyForm.hidden = false; refresh(); correct.focus(); });
+      email.addEventListener('input', refresh);
+      const handleError = (e: unknown) => {
+        err.textContent = (e as Error).message;
+        if (e instanceof ApiError && ['hold_expired', 'too_many_attempts', 'not_found'].includes(e.code)) terminal = true;
+      };
+      editForm.addEventListener('submit', async ev => {
+        ev.preventDefault();
+        if (busy || terminal || Date.now() >= state.expires || (emailChanged() && Date.now() < retryAt)) return;
+        if (!first.value.trim() || !last.value.trim()) { err.textContent = 'Scrivi nome e cognome.'; return; }
+        const customer: Customer = { first_name: first.value.trim(), last_name: last.value.trim(), phone: phone.value.trim() || null, email: email.value.trim().toLowerCase() };
+        const changingEmail = emailChanged();
+        busy = true; err.textContent = ''; feedback.textContent = ''; refresh();
         try {
-          const out = await api<{ email: string }>(API, '/bookings/resend-otp', {
-            token: state.token, email: targetEmail,
-          });
-          address = out.email;
-          displayedAddress.textContent = address; editEmail.value = address; editPanel.hidden = true;
-          code.value = '';
-          feedback.textContent = 'Nuovo codice inviato. Usa solo l’ultimo codice ricevuto.';
+          const out = await api<{ customer: Customer; code_sent: boolean }>(API, '/bookings/update-customer', { token: state.token, customer });
+          state.customer = out.customer; renderSummary();
+          editForm.hidden = true; verifyForm.hidden = false;
+          if (out.code_sent) { code.value = ''; retryAt = Date.now() + 60_000; }
+          feedback.textContent = out.code_sent ? 'Dati aggiornati e nuovo codice inviato. Usa solo l’ultimo codice ricevuto.' : 'Dati aggiornati. Il codice già ricevuto resta valido.';
           code.focus();
         } catch (e) {
           if (e instanceof ApiError && e.code === 'email_failed') {
-            address = targetEmail.trim().toLowerCase(); displayedAddress.textContent = address;
-          }
-          err.textContent = (e as Error).message;
-        } finally {
-          retryAt = Date.now() + 60_000;
-          sending = false; correct.disabled = false; editEmail.disabled = false;
-          ok.disabled = !editPanel.hidden || Date.now() >= state.expires; refreshResend();
-        }
+            state.customer = customer; renderSummary(); code.value = ''; retryAt = Date.now() + 60_000;
+            editForm.hidden = true; verifyForm.hidden = false;
+          } else if (changingEmail && e instanceof ApiError && e.status === 429) retryAt = Date.now() + 60_000;
+          handleError(e);
+        } finally { busy = false; refresh(); }
       });
-      const tick = setInterval(() => {
-        refreshResend();
-        const left = Math.max(0, Math.round((state.expires - Date.now()) / 1000));
-        timer.textContent = left ? `Teniamo l’orario per te ancora ${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}.` : 'Tempo scaduto: scegli di nuovo un orario.';
-        if (!left) { clearInterval(tick); ok.disabled = true; }
-      }, 1000);
-      const form = h('form', {}, h('label', { class: 'f' }, 'Codice', code), timer, err, feedback, h('div', { class: 'actions' }, ok, correct), editPanel, resend);
-      form.addEventListener('submit', async (ev) => {
-        ev.preventDefault();
-        if (sending || Date.now() >= state.expires) return;
-        err.textContent = '';
-        if (!/^\d{6}$/.test(code.value.trim())) return void (err.textContent = 'Il codice ha 6 cifre.');
-        ok.disabled = true;
+      resend.addEventListener('click', async () => {
+        if (resend.disabled) return;
+        busy = true; err.textContent = ''; feedback.textContent = ''; refresh();
         try {
-          const b = await api<PublicBooking>(API, '/bookings/verify', { token: state.token, code: code.value.trim() });
-          clearInterval(tick);
-          stepDone(b);
+          await api(API, '/bookings/resend-otp', { token: state.token });
+          code.value = ''; retryAt = Date.now() + 60_000;
+          feedback.textContent = 'Nuovo codice inviato. Usa solo l’ultimo codice ricevuto.';
+          code.focus();
         } catch (e) {
-          ok.disabled = false;
-          err.textContent = (e as Error).message;
-          if (e instanceof ApiError && ['hold_expired', 'too_many_attempts', 'not_found'].includes(e.code)) {
-            clearInterval(tick);
-            ok.disabled = true;
-            const again = h('button', { type: 'button', class: 'btn btn-ghost' }, 'Scegli un altro orario');
-            again.addEventListener('click', stepSlot);
-            form.append(again);
-          }
-        }
+          if (e instanceof ApiError && (e.code === 'email_failed' || e.status === 429)) { retryAt = Date.now() + 60_000; code.value = ''; }
+          handleError(e);
+        } finally { busy = false; refresh(); }
       });
-      show(4, h('div', { class: 'card panel' }, h('h2', {}, 'Controlla la tua email'),
-        h('p', {}, 'Abbiamo mandato un codice di 6 cifre a ', displayedAddress, '. Scrivilo qui per confermare. Se non lo trovi guarda anche nello spam.'), form));
+      const tick = setInterval(refresh, 1000);
+      again.addEventListener('click', () => { clearInterval(tick); stepSlot(); });
+      verifyForm.addEventListener('submit', async ev => {
+        ev.preventDefault();
+        if (ok.disabled) return;
+        if (!/^\d{6}$/.test(code.value.trim())) { err.textContent = 'Il codice ha 6 cifre.'; return; }
+        busy = true; err.textContent = ''; refresh();
+        try {
+          const booking = await api<PublicBooking>(API, '/bookings/verify', { token: state.token, code: code.value.trim() });
+          clearInterval(tick); stepDone(booking);
+        } catch (e) { handleError(e); }
+        finally { busy = false; refresh(); }
+      });
+      renderSummary(); refresh();
+      show(4, h('div', { class: 'card panel otp-panel' }, h('h2', {}, 'Controlla i tuoi dati'),
+        h('div', { class: 'recap' }, h('strong', {}, whenLabel(`${state.date} ${state.time}:00`)), h('span', { class: 'small' }, chosen().map(s => s.name).join(' + '))),
+        summary, correct, editForm,
+        h('p', {}, 'Codice inviato a ', address, '. Se non lo trovi controlla anche lo spam.'),
+        verifyForm, feedback, err, resend, timer, again));
       code.focus();
     }
 
@@ -299,3 +342,4 @@ const wa = waLink(WA_HELLO);
     }
   }
 </script>
+
