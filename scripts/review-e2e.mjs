@@ -29,6 +29,12 @@ try {
     const stars=page.locator('input[name="rating"]');
     await stars.first().waitFor({state:'attached',timeout:10000});
     assert.equal(await stars.count(),5,scenario.name);
+    const boxes = await page.locator('.review-star').evaluateAll(elements => elements.map(element => {
+      const rect = element.getBoundingClientRect();
+      return { x: rect.x, y: rect.y, width: rect.width };
+    }));
+    assert.ok(boxes.every(box => Math.abs(box.y - boxes[0].y) < 2), 'all five stars must share one horizontal row');
+    assert.ok(boxes.every((box, index) => index === 0 || box.x >= boxes[index - 1].x + boxes[index - 1].width - 1), 'stars must not overlap');
     assert.equal(await page.locator('nav.bar').count(),0,'fixed action bar should be absent on review landing');
     assert.equal(await page.getByRole('link',{name:/Scrivi una recensione su Google/}).count(),0,'initial step only shows stars');
     assert.equal(await page.getByRole('button',{name:'Invia feedback privato'}).count(),0,'private form absent initially');
