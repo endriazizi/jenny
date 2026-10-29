@@ -4,9 +4,10 @@ import '../styles/booking.css';
 import { BOOKING_API } from '../data/booking';
 ---
 <Base title="La tua esperienza · Jenny Nails Studio" description="Racconta la tua esperienza da Jenny Nails Studio." noindex>
-  <section class="bk" id="review" data-api={BOOKING_API}>
+  <section class="bk jn-review" id="review" data-api={BOOKING_API}>
     <p class="eyebrow">Jenny Nails Studio</p>
     <h1 class="title-lg">La tua <em>esperienza</em></h1>
+    <p class="review-lead">La tua opinione è preziosa. Come ti sei trovata da Jenny Nails Studio? ✨</p>
     <div class="card panel" id="review-view" aria-live="polite"><p>Caricamento…</p></div>
   </section>
 </Base>
@@ -16,47 +17,82 @@ import { BOOKING_API } from '../data/booking';
   const view = document.getElementById('review-view')!;
   const token = location.hash.slice(1);
   const base = root.dataset.api!;
+  const starText = ['','Da migliorare','Non del tutto soddisfatta','Discreta','Molto positiva','Fantastica!'];
   async function start() {
     if (!/^[a-f0-9]{64}$/.test(token)) { view.textContent = 'Link non disponibile. Contatta il salone per una nuova richiesta.'; return; }
     try {
-      const state = await api<{ feedback_submitted: boolean }>(base, '/reviews/landing', { token });
-      // Google is available to everyone, independently from rating or private feedback.
-      const google = h('a', { class: 'btn btn-primary', href: base + '/reviews/r/' + token, target: '_blank', rel: 'noopener noreferrer' }, 'Scrivi una recensione su Google');
-      const intro = h('p', {}, 'Vuoi raccontare la tua esperienza? Puoi lasciare una recensione pubblica su Google oppure un feedback privato al salone. Entrambi sono facoltativi.');
-      const privateBox = h('div', { class: 'review-private' });
-      view.replaceChildren(intro, google, h('p', { class: 'small muted' }, 'La recensione Google si scrive sul sito di Google e non viene pubblicata da questa pagina.'), privateBox);
-      if (state.feedback_submitted) { privateBox.textContent = 'Grazie, il tuo feedback privato è già stato registrato.'; return; }
+      const state = await api<{ feedback_submitted: boolean; highlight_threshold?: number }>(base, '/reviews/landing', { token });
+      const threshold = Math.max(1, Math.min(5, Number(state.highlight_threshold) || 4));
+      const google = h('a', { class: 'btn btn-primary review-google', href: base + '/reviews/r/' + token, target: '_blank', rel: 'noopener noreferrer' }, '⭐ Scrivi una recensione su Google');
+      const note = h('p', { class: 'small muted' }, 'La recensione Google è facoltativa e si scrive direttamente su Google. Puoi usarla con qualsiasi valutazione.');
+      const feedbackBox = h('div', { class: 'review-private' });
+      if (state.feedback_submitted) {
+        view.replaceChildren(h('h2', {}, 'Grazie di cuore! 💗'), h('p', {}, 'Il tuo feedback privato è stato registrato.'), google, note);
+        return;
+      }
       const votes = h('fieldset', { class: 'review-votes' }, h('legend', {}, 'Come è stata la tua esperienza?'));
-      for (let rating = 1; rating <= 5; rating++) votes.append(h('label', {}, h('input', { type: 'radio', name: 'rating', value: rating, required: true }), String(rating) + ' ★'));
-      const text = h('textarea', { maxlength: 2000, rows: 4, placeholder: 'Cosa ti è piaciuto? Cosa possiamo migliorare?' });
-      const status = h('p', { role: 'status' });
-      const submit = h('button', { class: 'btn btn-ghost', type: 'submit' }, 'Invia feedback privato');
-      const form = h('form', {}, h('h2', {}, 'Un messaggio solo per noi'), votes,
-        h('label', { class: 'f' }, 'Commento (facoltativo)', text),
-        h('p', { class: 'small muted' }, 'Voto e commento saranno visibili solo allo staff. Non inserire dati sensibili.'),
+      const radios: HTMLInputElement[] = [];
+      for (let rating = 1; rating <= 5; rating++) {
+        const radio = h('input', { type: 'radio', name: 'rating', value: rating, required: true, 'aria-label': rating + ' stelle su 5' }) as HTMLInputElement;
+        radios.push(radio);
+        votes.append(h('label', { class: 'review-star' }, radio, h('span', { 'aria-hidden': 'true' }, '★')));
+      }
+      const description = h('p', { class: 'review-rating-label', role: 'status' }, 'Seleziona da 1 a 5 stelle');
+      const text = h('textarea', { maxlength: 2000, rows: 4, placeholder: 'Raccontaci cosa ti è piaciuto o cosa possiamo migliorare…' }) as HTMLTextAreaElement;
+      const status = h('p', { role: 'status', class: 'review-status' });
+      const submit = h('button', { class: 'btn btn-ghost', type: 'submit' }, 'Invia feedback privato') as HTMLButtonElement;
+      const form = h('form', { class: 'review-form' }, votes, description, feedbackBox,
+        h('label', { class: 'f review-comment' }, 'Un messaggio solo per noi (facoltativo)', text),
+        h('p', { class: 'small muted' }, 'Il voto e il commento privati sono visibili soltanto allo staff. Non inserire dati sensibili.'),
         submit, status);
+      function update() {
+        const rating = Number(radios.find(r => r.checked)?.value || 0);
+        radios.forEach((r, i) => r.parentElement?.classList.toggle('selected', !!rating && i < rating));
+        description.textContent = rating ? rating + '/5 · ' + starText[rating] : 'Seleziona da 1 a 5 stelle';
+        if (!rating) {
+          feedbackBox.replaceChildren(h('p', { class: 'small muted' }, 'Scegli le stelle per continuare.'));
+        } else if (rating >= threshold) {
+          feedbackBox.replaceChildren(h('h2', {}, 'Che meraviglia! ✨'), h('p', {}, 'Grazie per aver condiviso la tua esperienza. Ti va di raccontarla anche su Google? 💗'), google, note);
+        } else {
+          feedbackBox.replaceChildren(h('h2', {}, 'La tua opinione conta 💗'), h('p', {}, 'Ci aiuti a migliorare? Puoi raccontarci la tua esperienza in privato, oppure lasciare una recensione pubblica.'), google, note);
+        }
+      }
+      radios.forEach(r => r.addEventListener('change', update));
       form.addEventListener('submit', async event => {
         event.preventDefault();
-        const vote = form.querySelector<HTMLInputElement>('input[name="rating"]:checked');
-        if (!vote || submit.disabled) return;
+        const rating = Number(radios.find(r => r.checked)?.value || 0);
+        if (!rating || submit.disabled) { description.textContent = 'Seleziona le stelle prima di inviare.'; return; }
         submit.disabled = true;
         try {
-          await api(base, '/reviews/feedback', { token, rating: Number(vote.value), text: text.value });
-          privateBox.replaceChildren(h('p', { role: 'status' }, 'Grazie! Il tuo feedback privato è stato registrato.'));
+          await api(base, '/reviews/feedback', { token, rating, text: text.value });
+          view.replaceChildren(h('h2', {}, 'Grazie per il tuo feedback! 💗'), h('p', {}, 'Il tuo messaggio privato è stato registrato.'), google, note);
         } catch (error) { status.textContent = (error as Error).message; submit.disabled = false; }
       });
-      privateBox.append(form);
+      view.replaceChildren(form);
+      update();
     } catch (error) { view.textContent = (error as Error).message; }
   }
   void start();
 </script>
 <style>
-  :global(#review .review-private) { border-top:1px solid var(--bordo);padding-top:24px; }
-  :global(#review .review-votes) { flex-direction:row;flex-wrap:wrap;gap:12px; }
-  :global(#review .review-votes label) { min-height:48px;display:flex;align-items:center;gap:6px; }
-  :global(#review .review-votes input) { width:20px;height:20px;accent-color:var(--malva); }
-  :global(#review-view .btn) { min-height:48px;white-space:normal;text-align:center;overflow-wrap:anywhere; }
-  :global(#review-view textarea) { min-width:0;max-width:100%;box-sizing:border-box;font-size:max(1rem,16px); }
-  :global(#review-view [role="status"]) { overflow-wrap:anywhere; }
+  :global(.jn-review) { padding-bottom:calc(150px + env(safe-area-inset-bottom,0px)); }
+  :global(.jn-review .review-lead) { max-width:40rem;font-size:clamp(1.05rem,2.5vw,1.3rem);line-height:1.6;margin:0 0 1.2rem; }
+  :global(.jn-review .review-form) { display:grid;gap:1rem; }
+  :global(.jn-review .review-votes) { display:flex;flex-wrap:nowrap;justify-content:space-between;gap:clamp(2px,2vw,14px);border:0;padding:0;margin:0;min-width:0; }
+  :global(.jn-review .review-votes legend) { font-size:clamp(1rem,2.5vw,1.2rem);font-weight:700;padding-bottom:1rem; }
+  :global(.jn-review .review-star) { position:relative;display:grid;place-items:center;flex:1 1 0;min-width:0;min-height:52px;cursor:pointer;border-radius:14px;color:#c5b7b9; }
+  :global(.jn-review .review-star span) { font-size:clamp(1.9rem,8vw,3.4rem);line-height:1;transition:color .15s ease; }
+  :global(.jn-review .review-star.selected span) { color:#a24d6d; }
+  :global(.jn-review .review-star input) { position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:pointer; }
+  :global(.jn-review .review-star:focus-within) { outline:3px solid #a24d6d;outline-offset:2px; }
+  :global(.jn-review .review-rating-label) { margin:0;text-align:center;font-weight:650;min-height:1.5em; }
+  :global(.jn-review .review-private) { border-top:1px solid var(--bordo);padding-top:1.3rem;display:grid;gap:.8rem; }
+  :global(.jn-review .review-private h2) { margin:0;font-size:clamp(1.3rem,4vw,1.8rem); }
+  :global(.jn-review .review-private p) { margin:0;line-height:1.6; }
+  :global(.jn-review .review-comment) { display:grid;gap:.5rem; }
+  :global(.jn-review .btn) { min-height:50px;white-space:normal;text-align:center;overflow-wrap:anywhere; }
+  :global(.jn-review textarea) { width:100%;min-width:0;max-width:100%;box-sizing:border-box;font-size:max(1rem,16px); }
+  :global(.jn-review [role="status"]) { overflow-wrap:anywhere; }
+  @media (max-width:400px) { :global(.jn-review .panel) { padding:clamp(14px,4vw,24px); } }
+  @media (prefers-reduced-motion:reduce) { :global(.jn-review .review-star span) { transition:none; } }
 </style>
-
