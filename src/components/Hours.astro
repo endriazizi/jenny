@@ -1,25 +1,58 @@
 ---
-import { SITE } from '../data/site';
-const fmt = (s: string) => s.replace('-', '–');
+import { BOOKING_API } from '../data/booking';
+const days = ['Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato','Domenica'];
 ---
-{SITE.hours && (
-  <dl class="hrs">
-    {SITE.hours.map((h) => (
-      <div>
-        <dt>{h.label}</dt>
-        <dd class:list={{ chiuso: !h.slots.length }}>{h.slots.length ? h.slots.map(fmt).join(' · ') : 'Chiuso'}</dd>
-      </div>
+<div class="hours-live" data-hours-api={BOOKING_API} aria-live="polite">
+  <p class="hours-status" role="status">Caricamento degli orari…</p>
+  <dl class="hrs" hidden>
+    {days.map((d, i) => (
+      <div data-weekday={i + 1}><dt>{d}</dt><dd>—</dd></div>
     ))}
   </dl>
-)}
-{SITE.hours && SITE.byAppointment && <p class="note">Solo su appuntamento.</p>}
-
+  <p class="note">Solo su appuntamento.</p>
+</div>
 <style>
-  .hrs { margin: 0; display: flex; flex-direction: column; }
-  .hrs div { display: flex; justify-content: space-between; gap: 16px; padding: 7px 0; border-bottom: 1px dashed var(--bordo); font-size: 15.5px; }
-  .hrs div:last-child { border-bottom: 0; }
-  dt { font-weight: 600; }
-  dd { margin: 0; font-variant-numeric: tabular-nums; text-align: right; }
-  .chiuso { color: var(--testo-2); }
-  .note { font-size: 14px; color: var(--testo-2); margin-top: 6px; }
+  .hrs { margin:0; display:flex; flex-direction:column; }
+  .hrs div { display:flex; justify-content:space-between; gap:16px; padding:7px 0; border-bottom:1px dashed var(--bordo); font-size:15.5px; }
+  .hrs div:last-child { border-bottom:0; }
+  dt { font-weight:600; }
+  dd { margin:0; font-variant-numeric:tabular-nums; text-align:right; }
+  .chiuso { color:var(--testo-2); }
+  .note,.hours-status { font-size:14px; color:var(--testo-2); margin-top:6px; }
 </style>
+<script>
+  const roots = document.querySelectorAll<HTMLElement>('.hours-live[data-hours-api]');
+  for (const root of roots) {
+    const status = root.querySelector<HTMLElement>('.hours-status');
+    const list = root.querySelector<HTMLElement>('.hrs');
+    const api = root.dataset.hoursApi;
+    if (!api || !status || !list) continue;
+    fetch(api.replace(/\/$/, '') + '/hours', { cache: 'no-store' })
+      .then(async response => {
+        if (!response.ok) throw new Error('hours_unavailable');
+        return response.json();
+      })
+      .then(data => {
+        if (!Array.isArray(data?.hours)) throw new Error('invalid_hours');
+        const schedule = new Map<number,string[]>();
+        for (const entry of data.hours) {
+          const day = Number(entry?.weekday);
+          const start = String(entry?.start ?? '');
+          const end = String(entry?.end ?? '');
+          if (!Number.isInteger(day) || day < 1 || day > 7 || !/^\d{2}:\d{2}$/.test(start) || !/^\d{2}:\d{2}$/.test(end)) continue;
+          if (!schedule.has(day)) schedule.set(day, []);
+          schedule.get(day)!.push(start + '–' + end);
+        }
+        root.querySelectorAll<HTMLElement>('[data-weekday]').forEach(row => {
+          const slots = schedule.get(Number(row.dataset.weekday)) || [];
+          const dd = row.querySelector('dd');
+          if (!dd) return;
+          dd.textContent = slots.length ? slots.join(' · ') : 'Chiuso';
+          dd.classList.toggle('chiuso', !slots.length);
+        });
+        list.hidden = false;
+        status.hidden = true;
+      })
+      .catch(() => { status.textContent = 'Orari momentaneamente non disponibili. Contattaci per informazioni.'; });
+  }
+</script>
