@@ -9,12 +9,11 @@ const { size = 'sm' } = Astro.props;
 </span>
 
 <style>
-  .wm { display: inline-flex; flex-direction: column; justify-content: center; line-height: 1; color: var(--inchiostro); min-height: 40px; min-width: 0; width: 100%; max-width: 100%; flex: none; contain: layout; }
-  .wm .j, .wm .s { display: block; white-space: nowrap; }
-  .j { font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-weight: 500; font-size: 27px; letter-spacing: -0.02em; }
-  .s { font-size: 8.5px; font-weight: 700; letter-spacing: 0.17em; text-transform: uppercase; color: var(--malva); margin-top: 3px; padding-left: 2px; }
-  .lg .j { font-size: 40px; }
-  .lg .s { font-size: 12px; }
-  @media (max-width: 899px) { .wm { min-height: 38px; } .j { font-size: 25px; } .s { font-size: 8px; letter-spacing: .15em; } }
-  @media (min-width: 900px) { .wm { min-height: 42px; } }
+  /* Unica proporzione del marchio, scalata in modo uniforme via font-size. */
+  .wm { display:inline-flex; flex-direction:column; justify-content:center; align-items:flex-start; width:max-content; max-width:100%; line-height:1; color:var(--inchiostro); flex:0 0 auto; font-size:27px; }
+  .wm .j, .wm .s { display:block; white-space:nowrap; }
+  .j { font-family:Georgia,'Times New Roman',serif; font-style:italic; font-weight:500; font-size:1em; letter-spacing:-.02em; }
+  .s { font-family:Arial,Helvetica,sans-serif; font-size:.31em; font-weight:700; letter-spacing:.17em; text-transform:uppercase; color:var(--malva); margin-top:.29em; padding-left:.2em; }
+  .lg { font-size:29px; }
+  @media(max-width:899px) { .wm { font-size:24px; } .lg { font-size:27px; } }
 </style>
