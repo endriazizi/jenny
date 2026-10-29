@@ -36,6 +36,7 @@ try {
     const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>window.innerWidth+2);
     assert.equal(overflow,false,'no horizontal viewport overflow');
     await page.getByRole('button',{name:'Invia feedback privato'}).click();
+    await page.getByRole('heading',{name:/Grazie per il tuo feedback/}).waitFor({timeout:10000});
     assert.equal(feedback.length,1);
     assert.equal(feedback[0].rating,scenario.rating);
     assert.equal(feedback[0].token,token);
