@@ -59,16 +59,9 @@ const REAL: SiteData = {
   whatsappE164: '393515228889',
   email: null,
   instagram: null,
-  // Orari provvisori (standard per un salone su appuntamento): DA CONFERMARE con Jenny.
-  hours: [
-    { day: 'Monday', label: 'Lunedì', slots: [] },
-    { day: 'Tuesday', label: 'Martedì', slots: ['09:00-19:00'] },
-    { day: 'Wednesday', label: 'Mercoledì', slots: ['09:00-19:00'] },
-    { day: 'Thursday', label: 'Giovedì', slots: ['09:00-19:00'] },
-    { day: 'Friday', label: 'Venerdì', slots: ['09:00-19:00'] },
-    { day: 'Saturday', label: 'Sabato', slots: ['09:00-17:00'] },
-    { day: 'Sunday', label: 'Domenica', slots: [] },
-  ],
+  // Orari pubblici letti da /api/jenny/public/hours, gestiti da ENEA.
+  // Evita che i valori statici obsoleti compaiano nei dati strutturati.
+  hours: null,
   byAppointment: true,
   credits: { label: 'Realizzato da Milloshi Digital Agency', author: 'Endri Azizi', href: null },
 };
