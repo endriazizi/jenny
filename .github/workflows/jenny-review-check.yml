@@ -5,6 +5,7 @@ on:
     paths:
       - 'src/pages/recensione.astro'
       - 'src/scripts/booking-client.ts'
+      - 'scripts/review-e2e.mjs'
       - 'package.json'
       - 'package-lock.json'
       - '.github/workflows/jenny-review-check.yml'
@@ -30,3 +31,12 @@ jobs:
       - run: npm ci
       - run: npm run check
       - run: npm run build
+      - name: Install browser test runtime
+        run: |
+          npm install --no-save --package-lock=false playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Review landing E2E (mobile and desktop)
+        run: |
+          npm run preview -- --host 127.0.0.1 --port 4321 > /tmp/jenny-preview.log 2>&1 &
+          for i in $(seq 1 30); do curl -fsS http://127.0.0.1:4321/recensione/ >/dev/null && break; sleep 1; done
+          node scripts/review-e2e.mjs
