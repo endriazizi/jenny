@@ -9,5 +9,5 @@ export default defineConfig({
   site,
   trailingSlash: 'always',
   build: { format: 'directory' },
-  integrations: [sitemap({ filter: (page) => !/\/(404|prenota|gestisci)\//.test(page) })],
+  integrations: [sitemap({ filter: (page) => !/\/(404|prenota|gestisci|recensione)\//.test(page) })],
 });
