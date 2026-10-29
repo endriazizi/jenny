@@ -55,8 +55,8 @@ const REAL: SiteData = {
   rea: 'MC-300616',
   pec: 'juxhenia.azizi@pec.it',
   address: { street: 'Largo Rotabella, 1', postalCode: '62022', city: 'Castelraimondo', province: 'MC', country: 'IT' },
-  phone: { display: '389 986 8381', tel: '+393899868381' },
-  whatsappE164: '393899868381',
+  phone: { display: '351 522 8889', tel: '+393515228889' },
+  whatsappE164: '393515228889',
   email: null,
   instagram: null,
   // Orari provvisori (standard per un salone su appuntamento): DA CONFERMARE con Jenny.
