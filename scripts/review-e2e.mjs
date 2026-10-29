@@ -156,5 +156,24 @@ try {
     assert.equal(await page.locator('textarea,input[name=rating]').count(),0,'revoked link cannot accept feedback');
     await context.close();console.log('PASS revoked personal link');
   }
+  for(const width of [320,393,768,1280]) {
+    const context=await browser.newContext({viewport:{width,height:900}});
+    const page=await context.newPage();
+    await page.goto(base+'/',{waitUntil:'domcontentloaded'});
+    const guide=page.locator('#come-prenotare');
+    assert.equal(await guide.locator('li').count(),3);
+    const layout=await guide.evaluate(el=>{
+      const r=el.getBoundingClientRect();return {height:r.height,left:r.left,right:r.right};
+    });
+    assert.ok(layout.height<520,'three booking steps should remain compact');
+    assert.ok(layout.left>=-1 && layout.right<=width+1,'guide must fit viewport');
+    const cta=page.locator('.hero .btn-primary');
+    const href=await cta.getAttribute('href');
+    if(href==='/prenota/') {
+      assert.match(await cta.innerText(),/Prenota online/);
+      assert.match(await guide.innerText(),/codice ricevuto via email/);
+    }
+    await context.close();console.log('PASS compact booking guide '+width+'px');
+  }
 } finally {await browser.close();}
 
