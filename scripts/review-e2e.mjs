@@ -40,14 +40,9 @@ try {
     assert.equal(await page.getByRole('button',{name:'Invia feedback privato'}).count(),0,'private form absent initially');
     await stars.nth(scenario.rating-1).check({force:true});
     assert.equal(await page.locator('.review-rating-label').innerText(),scenario.rating+'/5 · '+['','Da migliorare','Non del tutto soddisfatta','Discreta','Molto positiva','Fantastica!'][scenario.rating]);
-    const googleFirst = scenario.rating >= scenario.threshold;
-    assert.equal(await page.getByRole('link',{name:/Scrivi una recensione su Google/}).count(),googleFirst ? 1 : 0,'only selected path is shown');
-    assert.equal(await page.getByRole('button',{name:'Invia feedback privato'}).count(),googleFirst ? 0 : 1,'private and Google panels are exclusive');
-    if (!googleFirst) await page.getByRole('button',{name:'Preferisco scrivere su Google'}).click();
-    assert.equal(await page.getByRole('link',{name:/Scrivi una recensione su Google/}).count(),1,'Google remains reachable for every rating');
-    assert.equal(await page.getByRole('button',{name:'Invia feedback privato'}).count(),0);
-    await page.getByRole('button',{name:'Preferisco inviare un messaggio privato'}).click();
-    assert.equal(await page.getByRole('link',{name:/Scrivi una recensione su Google/}).count(),0);
+    assert.equal(await page.getByRole('link',{name:/Scrivi una recensione su Google/}).count(),0,'save private feedback before offering Google');
+    assert.equal(await page.getByRole('button',{name:'Invia feedback privato'}).count(),1,'all ratings get a private form');
+    await page.locator('textarea').fill('La mia esperienza privata');
     const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>window.innerWidth+2);
     assert.equal(overflow,false,'no horizontal viewport overflow');
     await page.getByRole('button',{name:'Invia feedback privato'}).click();
@@ -56,7 +51,16 @@ try {
     assert.equal(feedback[0].rating,scenario.rating);
     assert.equal(feedback[0].token,token);
     assert.equal(await page.getByRole('heading',{name:/Grazie per il tuo feedback/}).count(),1);
-    assert.equal(await page.getByRole('link',{name:/Scrivi una recensione su Google/}).count(),1);
+    assert.equal(await page.getByRole('link',{name:/Scrivi una recensione su Google/}).count(),scenario.rating === 5 ? 1 : 0);
+    assert.equal(feedback[0].text,'La mia esperienza privata');
+    await page.route('**/api/jenny/public/reviews/landing',route=>route.fulfill({
+      status:200,contentType:'application/json',headers:{'access-control-allow-origin':'*'},
+      body:JSON.stringify({feedback_submitted:true,feedback_rating:scenario.rating})
+    }));
+    await page.reload({waitUntil:'domcontentloaded'});
+    await page.getByRole('heading',{name:/Grazie per il tuo feedback/}).waitFor();
+    assert.equal(await page.getByRole('link',{name:/Scrivi una recensione su Google/}).count(),scenario.rating === 5 ? 1 : 0,'saved rating restores completion step');
+    assert.equal(await page.locator('textarea').count(),0,'saved feedback cannot be submitted twice');
     await context.close();
     console.log('PASS '+scenario.name);
   }
