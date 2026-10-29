@@ -17,7 +17,7 @@ import { BOOKING_API } from '../data/booking';
             <label class="f">Nome<input type="text" name="first_name" autocomplete="given-name" maxlength="80" required /></label>
             <label class="f">Cognome<input type="text" name="last_name" autocomplete="family-name" maxlength="80" required /></label>
             <label class="f">Telefono<input name="phone" type="tel" inputmode="tel" autocomplete="tel" maxlength="32" required placeholder="Es. 333 1234567" /></label>
-            <label class="f">Data di nascita (facoltativa)<input name="birth_date" type="date" autocomplete="bday" min="1900-01-01" /></label>
+            <label class="f">Data di nascita (facoltativa)<input name="birth_date" type="text" inputmode="numeric" autocomplete="bday" placeholder="gg/mm/aaaa" maxlength="10" aria-describedby="birth-help birth-error" /><small id="birth-help" class="muted">Giorno / mese / anno</small><small id="birth-error" class="err" aria-live="polite"></small></label>
           </div>
           <label class="choice"><input name="privacy_notice" type="checkbox" required /><span>Ho letto l’<a href="/privacy/#recensioni" target="_blank" rel="noopener">informativa privacy</a> sul trattamento dei dati per gestire il mio feedback.</span></label>
           <label class="choice"><input name="marketing_consent" type="checkbox" /><span>Mi fa piacere ricevere novità, iniziative e offerte di <strong>Jenny Nails Studio</strong> al numero indicato, anche su WhatsApp. 💗 <small>Facoltativo: posso revocare il consenso quando voglio. Posso lasciare il feedback anche senza aderire.</small></span></label>
@@ -54,11 +54,47 @@ import { BOOKING_API } from '../data/booking';
   const submit = document.getElementById('submit-review') as HTMLButtonElement;
   const radios = [...form.querySelectorAll<HTMLInputElement>('input[name=rating]')];
   const birth = form.elements.namedItem('birth_date') as HTMLInputElement;
-  birth.max = romeToday();
+  const birthError = document.getElementById('birth-error')!;
+  function birthISO(): string | null {
+    if (!birth.value.trim()) return '';
+    const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(birth.value);
+    if (!match) return null;
+    const iso = match[3] + '-' + match[2] + '-' + match[1];
+    const date = new Date(iso + 'T00:00:00Z');
+    return Number.isFinite(date.getTime()) && date.toISOString().slice(0,10) === iso && iso >= '1900-01-01' && iso <= romeToday() ? iso : null;
+  }
+  function validateBirth(show = false): boolean {
+    const valid = birthISO() !== null;
+    const message = valid ? '' : 'Controlla la data: usa il formato gg/mm/aaaa.';
+    birth.setCustomValidity(message);
+    birth.setAttribute('aria-invalid', String(!valid));
+    birthError.textContent = show ? message : '';
+    return valid;
+  }
+  birth.addEventListener('beforeinput', (event: InputEvent) => {
+    const pos = birth.selectionStart ?? 0;
+    if (pos !== birth.selectionEnd) return;
+    if (event.inputType === 'deleteContentBackward' && birth.value[pos-1] === '/') birth.setSelectionRange(Math.max(0,pos-2),pos);
+    if (event.inputType === 'deleteContentForward' && birth.value[pos] === '/') birth.setSelectionRange(pos,pos+2);
+  });
+  birth.addEventListener('input', () => {
+    const raw = birth.value;
+    const caret = birth.selectionStart ?? raw.length;
+    const count = raw.slice(0,caret).replace(/\D/g,'').length;
+    const iso = /^(\d{4})-(\d{2})-(\d{2})$/.exec(raw);
+    const digits = iso ? iso[3]+iso[2]+iso[1] : raw.replace(/\D/g,'').slice(0,8);
+    birth.value = [digits.slice(0,2),digits.slice(2,4),digits.slice(4)].filter(Boolean).join('/');
+    let pos = 0, seen = 0;
+    while (pos < birth.value.length && seen < count) { if (/\d/.test(birth.value[pos])) seen++; pos++; }
+    birth.setSelectionRange(pos,pos);
+    validateBirth();
+  });
+  birth.addEventListener('blur', () => validateBirth(true));
   const token = [...crypto.getRandomValues(new Uint8Array(32))].map(n => n.toString(16).padStart(2,'0')).join('');
   let saving = false;
   const field = (name: string) => form.elements.namedItem(name) as HTMLInputElement;
   document.getElementById('continue-review')!.addEventListener('click', () => {
+    validateBirth(true);
     if (!form.reportValidity()) return;
     contacts.hidden = true; feedback.hidden = false; status.textContent = '';
     document.getElementById('feedback-title')!.focus(); root.scrollIntoView({block:'start'});
@@ -79,11 +115,12 @@ import { BOOKING_API } from '../data/booking';
     if (feedback.hidden) { document.getElementById('continue-review')!.click(); return; }
     const rating = Number(radios.find(r => r.checked)?.value || 0);
     if (!rating) { status.textContent = 'Scegli le stelle prima di inviare. 💗'; radios[0].focus(); return; }
+    if (!validateBirth(true)) { feedback.hidden = true; contacts.hidden = false; birth.reportValidity(); return; }
     saving = true; submit.disabled = true; status.textContent = 'Salvo il tuo messaggio…';
     try {
       const result = await api<{saved: boolean; token: string}>(root.dataset.api!, '/reviews/public', {
         first_name: field('first_name').value, last_name: field('last_name').value,
-        phone: field('phone').value, birth_date: birth.value,
+        phone: field('phone').value, birth_date: birthISO(),
         privacy_notice: field('privacy_notice').checked, marketing_consent: field('marketing_consent').checked,
         rating, text: (form.elements.namedItem('text') as HTMLTextAreaElement).value,
         website: field('website').value, submission_token: token
