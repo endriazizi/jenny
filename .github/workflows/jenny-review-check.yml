@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - 'src/pages/recensione.astro'
+      - 'src/pages/lascia-una-recensione.astro'
       - 'src/scripts/booking-client.ts'
       - 'scripts/review-e2e.mjs'
       - 'package.json'
@@ -12,6 +13,7 @@ on:
   pull_request:
     paths:
       - 'src/pages/recensione.astro'
+      - 'src/pages/lascia-una-recensione.astro'
       - 'src/scripts/booking-client.ts'
       - 'package.json'
       - 'package-lock.json'
