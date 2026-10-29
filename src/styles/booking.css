@@ -69,3 +69,29 @@
   .bk .two { grid-template-columns: 1fr; }
   .sum { bottom: calc(84px + env(safe-area-inset-bottom)); }
 }
+
+/* OTP review: one column on phones, growing text and long email addresses. */
+.bk [hidden] { display: none !important; }
+.bk .customer-summary { margin: 0; display: grid; gap: .25rem; min-width: 0; }
+.bk .customer-summary dt { font-size: .875rem; color: var(--testo-2); }
+.bk .customer-summary dd { margin: 0 0 .65rem; font-weight: 600; overflow-wrap: anywhere; }
+.bk .otp-address { overflow-wrap: anywhere; }
+.bk .otp-panel, .bk .otp-panel form, .bk .otp-panel .f { min-width: 0; }
+.bk .otp-panel input { box-sizing: border-box; width: 100%; min-width: 0; font-size: max(1rem, 16px); }
+.bk .otp-panel input.code { width: 100%; max-width: 100%; font-size: 1.5rem; }
+.bk .otp-panel button { min-height: 48px; white-space: normal; overflow-wrap: anywhere; }
+.bk .otp-panel .actions { align-items: stretch; }
+.bk .otp-panel .actions > * { flex: 1 1 100%; }
+.bk .bk-confirming > .lead { display: none; }
+@media (max-width: 760px) {
+  .bk { padding-bottom: calc(180px + env(safe-area-inset-bottom)); scroll-margin-top: 88px; }
+  .bk .otp-panel { padding: clamp(16px, 5vw, 24px); }
+  .bk .otp-panel :is(input, button) { scroll-margin-block: 100px 180px; }
+  .bk .steps { flex-wrap: wrap; }
+  .bk .steps li { min-width: 0; overflow-wrap: anywhere; }
+}
+@media (min-width: 761px) {
+  .bk .customer-summary { grid-template-columns: minmax(120px, 1fr) minmax(0, 2fr); gap: .75rem; }
+  .bk .otp-panel .actions > * { flex-basis: auto; }
+}
+
