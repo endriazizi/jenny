@@ -31,8 +31,8 @@ const external = BOOK_HREF.startsWith('http');
 
 <style>
   .hdr { background: color-mix(in srgb, var(--avorio) 92%, transparent); backdrop-filter: blur(8px); border-bottom: 1px solid var(--bordo); position: sticky; top: 0; z-index: 20; }
-  .hdr-in { display: flex; align-items: center; justify-content: space-between; gap: 16px; height: 76px; min-height: 76px; }
-  .brand { text-decoration: none; display: flex; align-items: center; justify-content: flex-start; flex: 0 0 auto; width: 148px; height: 56px; min-width: 0; overflow: hidden; }
+  .hdr-in { display: flex; align-items: center; justify-content: space-between; gap: 16px; height: 68px; min-height: 68px; }
+  .brand { text-decoration: none; display: flex; align-items: center; justify-content: flex-start; flex: 0 0 auto; width: 125px; height: 48px; min-width: 0; overflow: hidden; }
   .mnav summary { display: none; }
   nav { display: flex; align-items: center; gap: 28px; font-weight: 600; font-size: 15.5px; }
   nav a:not(.btn) { color: var(--inchiostro); text-decoration: none; }
@@ -44,13 +44,13 @@ const external = BOOK_HREF.startsWith('http');
     .mnav > nav { display: flex; }
   }
   @media (max-width: 899px) {
-    .hdr-in { height: 68px; min-height: 68px; }
-    .brand { width: 132px; height: 52px; }
+    .hdr-in { height: 64px; min-height: 64px; }
+    .brand { width: 115px; height: 44px; }
     .mnav summary { display: flex; align-items: center; justify-content: center; width: 48px; height: 48px; margin-right: -8px; cursor: pointer; list-style: none; border-radius: 12px; }
     .mnav summary::-webkit-details-marker { display: none; }
     .mnav .close, .mnav[open] .open { display: none; }
     .mnav[open] .close { display: flex; }
-    .mnav nav { position: absolute; left: 0; right: 0; top: 68px; flex-direction: column; align-items: stretch; gap: 0; background: var(--avorio); border-bottom: 1px solid var(--bordo); padding: 4px 16px 20px; box-shadow: 0 12px 24px rgba(45, 34, 38, .08); }
+    .mnav nav { position: absolute; left: 0; right: 0; top: 64px; flex-direction: column; align-items: stretch; gap: 0; background: var(--avorio); border-bottom: 1px solid var(--bordo); padding: 4px 16px 20px; box-shadow: 0 12px 24px rgba(45, 34, 38, .08); }
     .mnav nav a:not(.btn) { padding: 14px 0; border-bottom: 1px solid var(--bordo); font-size: 17px; }
     .mnav nav .btn { margin-top: 16px; }
   }
