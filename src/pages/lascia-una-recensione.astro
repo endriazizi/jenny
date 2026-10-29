@@ -1,0 +1,119 @@
+---
+import Base from '../layouts/Base.astro';
+import '../styles/booking.css';
+import { BOOKING_API } from '../data/booking';
+---
+<Base title="Lascia una recensione · Jenny Nails Studio" description="Raccontaci la tua esperienza da Jenny Nails Studio. Un messaggio solo per noi, con il cuore." noindex hideActionBar>
+  <section class="bk public-review" id="public-review" data-api={BOOKING_API}>
+    <p class="eyebrow">Jenny Nails Studio</p>
+    <h1 class="title-lg">La tua opinione <em>conta</em> 💗</h1>
+    <p class="intro">Un piccolo momento per raccontarci come ti sei trovata. Il tuo messaggio arriva direttamente a Jenny e ci aiuta a prenderci cura di ogni dettaglio. ✨</p>
+    <div class="card panel">
+      <form id="public-review-form">
+        <div id="contact-step">
+          <h2>Prima, presentiamoci 💅</h2>
+          <p class="small muted">Nome, cognome e telefono ci aiutano ad associare il messaggio alla cliente. La data di nascita è facoltativa.</p>
+          <div class="contact-grid">
+            <label class="f">Nome<input name="first_name" autocomplete="given-name" maxlength="80" required /></label>
+            <label class="f">Cognome<input name="last_name" autocomplete="family-name" maxlength="80" required /></label>
+            <label class="f">Telefono<input name="phone" type="tel" inputmode="tel" autocomplete="tel" maxlength="32" required placeholder="Es. 333 1234567" /></label>
+            <label class="f">Data di nascita (facoltativa)<input name="birth_date" type="date" autocomplete="bday" min="1900-01-01" /></label>
+          </div>
+          <label class="choice"><input name="privacy_notice" type="checkbox" required /><span>Ho letto l’<a href="/privacy/#recensioni" target="_blank" rel="noopener">informativa privacy</a> sul trattamento dei dati per gestire il mio feedback.</span></label>
+          <label class="choice"><input name="marketing_consent" type="checkbox" /><span>Mi fa piacere ricevere novità, iniziative e offerte di <strong>Jenny Nails Studio</strong> al numero indicato, anche su WhatsApp. 💗 <small>Facoltativo: posso revocare il consenso quando voglio. Posso lasciare il feedback anche senza aderire.</small></span></label>
+          <button class="btn btn-primary" id="continue-review" type="button">Continua · raccontaci la tua esperienza ✨</button>
+        </div>
+        <div id="feedback-step" hidden>
+          <h2>Come ti sei trovata? ✨</h2>
+          <p class="small muted">Voto e messaggio vengono salvati come feedback privato, visibile solo al salone.</p>
+          <fieldset>
+            <legend>La tua valutazione</legend>
+            <div class="stars">
+              {[1,2,3,4,5].map(n => <label class="star"><input type="radio" name="rating" value={n} aria-label={n + ' stelle su 5'} /><span aria-hidden="true">★</span></label>)}
+            </div>
+          </fieldset>
+          <p class="rating-label" id="public-rating-label" role="status">Seleziona da 1 a 5 stelle</p>
+          <label class="f">Un messaggio solo per noi (facoltativo)<textarea name="text" rows="4" maxlength="2000" placeholder="Cosa ti è piaciuto? C’è un dettaglio che possiamo migliorare? 💗"></textarea></label>
+          <p class="small muted">Non inserire informazioni sensibili o dati di altre persone.</p>
+          <button class="btn btn-primary" id="submit-review" type="submit">Invia il tuo feedback privato 💗</button>
+          <button class="btn btn-ghost" id="back-contact" type="button">Torna ai tuoi dati</button>
+        </div>
+        <label class="trap" aria-hidden="true">Lascia vuoto<input name="website" tabindex="-1" autocomplete="off" /></label>
+        <p id="public-review-status" role="status" aria-live="polite"></p>
+      </form>
+    </div>
+  </section>
+</Base>
+<script>
+  import { api, romeToday } from '../scripts/booking-client';
+  const root = document.getElementById('public-review')!;
+  const form = document.getElementById('public-review-form') as HTMLFormElement;
+  const contacts = document.getElementById('contact-step')!;
+  const feedback = document.getElementById('feedback-step')!;
+  const status = document.getElementById('public-review-status')!;
+  const submit = document.getElementById('submit-review') as HTMLButtonElement;
+  const radios = [...form.querySelectorAll<HTMLInputElement>('input[name=rating]')];
+  const birth = form.elements.namedItem('birth_date') as HTMLInputElement;
+  birth.max = romeToday();
+  const token = [...crypto.getRandomValues(new Uint8Array(32))].map(n => n.toString(16).padStart(2,'0')).join('');
+  let saving = false;
+  const field = (name: string) => form.elements.namedItem(name) as HTMLInputElement;
+  document.getElementById('continue-review')!.addEventListener('click', () => {
+    if (!form.reportValidity()) return;
+    contacts.hidden = true; feedback.hidden = false; status.textContent = '';
+    radios[0].focus(); root.scrollIntoView({block:'start'});
+  });
+  document.getElementById('back-contact')!.addEventListener('click', () => {
+    if (saving) return;
+    feedback.hidden = true; contacts.hidden = false;
+    field('first_name').focus();
+  });
+  radios.forEach(r => r.addEventListener('change', () => {
+    const rating = Number(radios.find(r => r.checked)?.value || 0);
+    radios.forEach((radio,i) => radio.parentElement?.classList.toggle('selected',i < rating));
+    document.getElementById('public-rating-label')!.textContent = rating + '/5 · ' + ['','Da migliorare','Non del tutto soddisfatta','Discreta','Molto positiva','Fantastica!'][rating];
+  }));
+  form.addEventListener('submit', async event => {
+    event.preventDefault();
+    if (saving) return;
+    if (feedback.hidden) { document.getElementById('continue-review')!.click(); return; }
+    const rating = Number(radios.find(r => r.checked)?.value || 0);
+    if (!rating) { status.textContent = 'Scegli le stelle prima di inviare. 💗'; radios[0].focus(); return; }
+    saving = true; submit.disabled = true; status.textContent = 'Salvo il tuo messaggio…';
+    try {
+      const result = await api<{saved: boolean; token: string}>(root.dataset.api!, '/reviews/public', {
+        first_name: field('first_name').value, last_name: field('last_name').value,
+        phone: field('phone').value, birth_date: birth.value,
+        privacy_notice: field('privacy_notice').checked, marketing_consent: field('marketing_consent').checked,
+        rating, text: (form.elements.namedItem('text') as HTMLTextAreaElement).value,
+        website: field('website').value, submission_token: token
+      });
+      if (!result.saved || !/^[a-f0-9]{64}$/.test(result.token)) throw new Error('Risposta non disponibile. Riprova.');
+      location.replace('/recensione/#' + result.token);
+    } catch (e) {
+      status.textContent = (e as Error).message;
+      saving = false; submit.disabled = false;
+    }
+  });
+</script>
+<style>
+  .public-review { padding-bottom:calc(48px + env(safe-area-inset-bottom)); }
+  .public-review .intro { font-size:clamp(1rem,2.5vw,1.2rem);line-height:1.7;margin-bottom:24px; }
+  .public-review .contact-grid { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px; }
+  .public-review .contact-grid > *, .public-review form, .public-review fieldset { min-width:0; }
+  .public-review input:not([type=checkbox]):not([type=radio]), .public-review textarea { box-sizing:border-box;width:100%;min-width:0;max-width:100%;font-size:max(1rem,16px); }
+  .public-review input[type=date] { padding:12px;border:1.5px solid var(--bordo);border-radius:12px;background:var(--bianco);color:var(--inchiostro);min-height:48px; }
+  .public-review .choice { display:flex;align-items:flex-start;gap:12px;font-size:.95rem;line-height:1.6; }
+  .public-review .choice input { flex:none;width:22px;height:22px;accent-color:var(--malva);margin-top:2px; }
+  .public-review .stars { display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:clamp(4px,2vw,16px);width:100%; }
+  .public-review .star { position:relative;display:grid;place-items:center;min-width:0;min-height:56px;color:#c5b7b9;border-radius:12px;cursor:pointer; }
+  .public-review .star span { font-size:clamp(1.8rem,8vw,3rem);line-height:1; }
+  .public-review .star.selected { color:var(--malva); }
+  .public-review .star input { position:absolute;inset:0;width:100%;height:100%;opacity:0;margin:0;cursor:pointer; }
+  .public-review .star:focus-within { outline:3px solid var(--malva);outline-offset:2px; }
+  .public-review .rating-label { text-align:center;font-weight:700; }
+  .public-review .btn { min-height:48px;white-space:normal;text-align:center;overflow-wrap:anywhere; }
+  .public-review .trap { display:none; }
+  .public-review .panel { gap:20px; }
+  @media(max-width:540px) { .public-review .contact-grid { grid-template-columns:1fr; } }
+</style>
