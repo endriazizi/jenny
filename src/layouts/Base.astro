@@ -16,9 +16,10 @@ interface Props {
   /** JSON-LD aggiuntivo (es. FAQPage, BreadcrumbList). */
   schema?: Record<string, unknown>[];
   noindex?: boolean;
+  hideActionBar?: boolean;
 }
 
-const { title, description = SITE.description, schema = [], noindex = false } = Astro.props;
+const { title, description = SITE.description, schema = [], noindex = false, hideActionBar = false } = Astro.props;
 const site = Astro.site!;
 const canonical = new URL(Astro.url.pathname, site).href;
 const ogImage = new URL(withVersion('/og.png'), site).href;
@@ -100,7 +101,7 @@ const robots = IS_PREVIEW || noindex ? 'noindex, nofollow' : 'index, follow';
       <slot />
     </main>
     <Footer />
-    <ActionBar />
+    {!hideActionBar && <ActionBar />}
     {!IS_PREVIEW && (
       <script is:inline>
         if ('serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
