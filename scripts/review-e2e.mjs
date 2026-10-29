@@ -81,6 +81,18 @@ try {
       status:200,contentType:'application/json',headers:{'access-control-allow-origin':'*'},
       body:JSON.stringify({feedback_submitted:true,feedback_rating:scenario.rating})}));
     await page.goto(base+'/lascia-una-recensione/',{waitUntil:'domcontentloaded'});
+    const fields=await page.locator('.contact-grid input').evaluateAll(elements=>elements.map(el=>{
+      const s=getComputedStyle(el);return {height:el.getBoundingClientRect().height,radius:s.borderRadius,border:s.border,padding:s.padding,font:s.fontSize};
+    }));
+    assert.equal(fields.length,4);
+    assert.ok(fields.every(field=>Math.abs(field.height-fields[0].height)<2 && field.height>=44),'contact inputs must have equal usable heights');
+    assert.ok(fields.every(field=>field.radius===fields[0].radius && field.border===fields[0].border && field.padding===fields[0].padding && field.font===fields[0].font),'text, telephone and birthday must have matching styles');
+    const identity=await page.locator('.footer-identity').evaluate(el=>{
+      const photo=el.querySelector('.footer-photo')?.getBoundingClientRect();
+      const copy=el.querySelector('.footer-copy').getBoundingClientRect();
+      return {sideBySide:!photo || photo.right<=copy.left,within:copy.right<=innerWidth};
+    });
+    assert.ok(identity.sideBySide && identity.within,'footer text must sit beside the portrait without overflow');
     assert.equal(await page.locator('input[name=marketing_consent]').isChecked(),false,'marketing must default off');
     await page.locator('#continue-review').click();
     assert.equal(await page.locator('#feedback-step').isVisible(),false,'contact fields and privacy must be completed first');
@@ -92,9 +104,15 @@ try {
     if(scenario.marketing) await page.locator('input[name=marketing_consent]').check();
     await page.locator('#continue-review').click();
     await page.locator('#feedback-step').waitFor({state:'visible'});
+    assert.equal(await page.locator('input[name=rating]:checked').count(),0,'highlight must not preselect a rating');
     const positions=await page.locator('.star').evaluateAll(elements=>elements.map(el=>el.getBoundingClientRect().y));
     assert.ok(positions.every(y=>Math.abs(y-positions[0])<2),'public stars must be horizontal');
     await page.locator('input[name=rating]').nth(scenario.rating-1).check({force:true});
+    assert.equal(await page.locator('input[name=rating]:checked').inputValue(),String(scenario.rating));
+    if(scenario.rating===5) {
+      const colors=await page.locator('.star').evaluateAll(elements=>elements.map(el=>getComputedStyle(el).backgroundColor));
+      assert.notEqual(colors[4],colors[3],'selected fifth star must have a distinct highlight');
+    }
     await page.locator('textarea[name=text]').fill('Un messaggio privato 💗');
     await page.locator('#submit-review').click();
     await page.getByRole('heading',{name:/Grazie per il tuo feedback/}).waitFor();
