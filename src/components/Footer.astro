@@ -1,6 +1,9 @@
 ---
 import InstallApp from './InstallApp.astro';
 import Wordmark from './Wordmark.astro';
+import { publicBranding } from '../data/public-branding';
+const { logo, footer } = await publicBranding();
+const footerLogo = footer || logo;
 import Icon from './Icon.astro';
 import { SITE, WHATSAPP, waLink, WA_HELLO, fullAddress, legalLine } from '../data/site';
 import { BUILD_VERSION, BUILD_SHA } from '../data/build';
@@ -11,7 +14,7 @@ const addr = fullAddress();
 <footer class="ftr">
   <div class="wrap grid">
     <div>
-      <a href="/" class="brand" aria-label="Jenny Nails Studio, home"><span class="footer-mark"><Wordmark size="lg" /></span></a>
+      <a href="/" class="brand" aria-label="Jenny Nails Studio, home"><span class="footer-mark">{footerLogo ? <img class="footer-logo-image" src={footerLogo} alt="Jenny Nails Studio" width="140" height="64" loading="lazy" decoding="async" /> : <Wordmark size="lg" />}</span></a>
       <p class="tag">{SITE.tagline}</p>
     </div>
     {(addr || SITE.phone || WHATSAPP || SITE.email || SITE.instagram) && (
@@ -57,6 +60,7 @@ const addr = fullAddress();
   .ftr a:hover { color: var(--malva); text-decoration: underline; }
   .brand { display: inline-flex; margin-bottom: 14px; align-items: center; border-radius: 14px; }
   .footer-mark { display: inline-flex; width: max-content; max-width: 145px; min-height: 46px; border-radius: 14px; overflow: hidden; align-items: center; }
+  .footer-logo-image { display:block; max-width:140px; max-height:64px; width:auto; height:auto; object-fit:contain; border-radius:12px; }
   .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 32px; }
   .grid p + p { margin-top: 6px; }
   .ic { display: flex; gap: 10px; align-items: flex-start; }
