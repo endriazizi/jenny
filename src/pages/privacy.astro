@@ -12,9 +12,7 @@ const addr = fullAddress();
   <p data-titolare={SITE.legalName ? undefined : 'mancante'}>{owner}{SITE.legalForm && ` (${SITE.legalForm.toLowerCase()})`}{addr && `, con sede in ${addr}`}{SITE.vat && `, P.IVA ${SITE.vat}`}{SITE.rea && `, REA ${SITE.rea}`}.{SITE.pec && <> PEC: <a href={`mailto:${SITE.pec}`}>{SITE.pec}</a>.</>}{SITE.email && <> Email: <a href={`mailto:${SITE.email}`}>{SITE.email}</a>.</>}</p>
 
   <h2>Quali dati raccoglie il sito</h2>
-  {BOOKING_ONLINE
-    ? <p>Il sito non richiede registrazione e non usa strumenti di statistica o pubblicità. L’unico modulo che salva dati è la prenotazione online, descritta più sotto.</p>
-    : <p>Il sito non ha moduli che salvano dati, non richiede registrazione e non usa strumenti di statistica o pubblicità.</p>}
+  <p>Il sito non richiede registrazione. I moduli di prenotazione e recensione possono salvare i dati che scegli di inviare, come descritto sotto.</p>
   <ul>
     <li><strong>Dati tecnici di navigazione.</strong> Il server che ospita il sito registra, come ogni server web, l’indirizzo IP, la data e la pagina richiesta. Servono solo a far funzionare il sito e a proteggerlo, e vengono cancellati periodicamente dal fornitore di hosting.</li>
     <li><strong>Messaggi su WhatsApp.</strong> Il modulo “Scrivici su WhatsApp” prepara il testo nel tuo browser e apre WhatsApp: il sito non lo riceve né lo salva. Se invii il messaggio, i dati che scrivi (nome, numero, trattamento, giorno) li riceviamo su WhatsApp e li usiamo solo per rispondere e fissare l’appuntamento. WhatsApp è un servizio di WhatsApp Ireland Limited, con una propria informativa.</li>
@@ -35,6 +33,12 @@ const addr = fullAddress();
       </ul>
     </>
   )}
+
+  <h2 id="recensioni">Feedback privati e recensioni</h2>
+  <p>Il modulo “Lascia una recensione” raccoglie nome, cognome, telefono, voto da 1 a 5 e un eventuale commento. La data di nascita è facoltativa. Salviamo il feedback nel gestionale del salone insieme alla data di invio e alla versione dell’informativa; voto e commento non vengono pubblicati sul sito.</p>
+  <p>Il numero di telefono inserito nel modulo non viene verificato automaticamente. I dati dichiarati non sovrascrivono i recapiti già verificati di una cliente. Non inserire informazioni sensibili o dati di altre persone.</p>
+  <p>Il consenso a ricevere novità, iniziative e offerte al numero indicato, anche su WhatsApp, è separato, facoltativo e non preselezionato. Puoi inviare il feedback senza aderire e revocare la tua scelta contattando il salone. La data di nascita, se fornita, viene conservata con i dati dichiarati nel modulo.</p>
+  <p>Dopo l’invio potresti ricevere un invito facoltativo a condividere l’esperienza su Google. La recensione pubblica si scrive direttamente su Google e segue la sua informativa. Registriamo le aperture del link, che non provano la pubblicazione della recensione. I dati del feedback restano nel gestionale per la gestione del riscontro; puoi chiederne accesso, rettifica o cancellazione tramite i contatti del titolare.</p>
 
   <h2>Base giuridica e conservazione</h2>
   <p>Trattiamo i dati per rispondere a una tua richiesta e per gestire l’appuntamento (art. 6.1.b GDPR). Li conserviamo per il tempo necessario a questo scopo e a eventuali obblighi di legge.</p>
