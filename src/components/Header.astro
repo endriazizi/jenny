@@ -1,7 +1,5 @@
 ---
 import Wordmark from './Wordmark.astro';
-import { publicBranding } from '../data/public-branding';
-const { logo } = await publicBranding();
 import Icon from './Icon.astro';
 import { BOOK_HREF } from '../data/site';
 const path = Astro.url.pathname;
@@ -15,7 +13,7 @@ const external = BOOK_HREF.startsWith('http');
 ---
 <header class="hdr">
   <div class="wrap hdr-in">
-    <a href="/" class="brand" aria-label="Jenny Nails Studio, home">{logo ? <img class="brand-image" src={logo} alt="Jenny Nails Studio" width="110" height="40" decoding="async" fetchpriority="high" /> : <Wordmark />}</a>
+    <a href="/" class="brand" aria-label="Jenny Nails Studio, home"><Wordmark /></a>
     <details class="mnav">
       <summary aria-label="Apri il menu di navigazione">
         <span class="open"><Icon name="menu" /></span>
