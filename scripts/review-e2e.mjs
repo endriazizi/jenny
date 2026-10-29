@@ -99,7 +99,23 @@ try {
     await page.locator('input[name=first_name]').fill('Giulia');
     await page.locator('input[name=last_name]').fill('Rossi');
     await page.locator('input[name=phone]').fill('3331234567');
-    if(scenario.birth) await page.locator('input[name=birth_date]').fill(scenario.birth);
+    const birthday=page.locator('input[name=birth_date]');
+    assert.equal(await birthday.inputValue(),'','birthday starts empty');
+    assert.equal(await birthday.getAttribute('inputmode'),'numeric');
+    await birthday.fill('31022000');
+    await birthday.blur();
+    assert.equal(await birthday.evaluate(el=>el.checkValidity()),false,'impossible date must be rejected');
+    await birthday.fill('31122999');
+    assert.equal(await birthday.evaluate(el=>el.checkValidity()),false,'future date must be rejected');
+    await birthday.fill('');
+    if(scenario.birth) {
+      await birthday.pressSequentially('20091989');
+      assert.equal(await birthday.inputValue(),'20/09/1989','separators are inserted automatically');
+      await birthday.fill('29/02/2000');
+      assert.equal(await birthday.evaluate(el=>el.checkValidity()),true,'leap day is accepted');
+      await birthday.fill(scenario.birth);
+      assert.equal(await birthday.inputValue(),'20/05/1990','ISO autofill is converted to Italian display');
+    }
     await page.locator('input[name=privacy_notice]').check();
     if(scenario.marketing) await page.locator('input[name=marketing_consent]').check();
     await page.locator('#continue-review').click();
