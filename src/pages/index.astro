@@ -1,5 +1,6 @@
 ---
 import { Image } from 'astro:assets';
+import { BOOKING_ONLINE } from '../data/booking';
 import Base from '../layouts/Base.astro';
 import Icon from '../components/Icon.astro';
 import Hours from '../components/Hours.astro';
@@ -19,10 +20,14 @@ const faqSchema = {
   '@type': 'FAQPage',
   mainEntity: FAQS.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })),
 };
-const steps = [
-  { icon: 'sparkles', title: 'Scegli il trattamento', text: 'Manicure, semipermanente, ricostruzione o nail art. Se non sai cosa scegliere, ti consigliamo noi.' },
-  { icon: 'message-circle', title: WHATSAPP ? 'Scrivici su WhatsApp' : 'Contattaci', text: 'Dicci il giorno che preferisci. Per la nail art puoi allegare una foto di riferimento.' },
-  { icon: 'calendar-heart', title: 'Ricevi la conferma', text: 'Ti rispondiamo con l’orario libero. L’appuntamento vale quando lo confermiamo.' },
+const steps = BOOKING_ONLINE ? [
+  { icon: 'sparkles', title: 'Scegli trattamento e orario', text: 'Seleziona i servizi, poi il giorno e una fascia disponibile.' },
+  { icon: 'shield-check', title: 'Inserisci i dati e verifica l’email', text: 'Compila i recapiti e inserisci il codice ricevuto via email.' },
+  { icon: 'calendar-heart', title: 'Controlla la conferma', text: 'L’appuntamento è valido quando la richiesta risulta confermata.' },
+] as const : [
+  { icon: 'sparkles', title: 'Scegli il trattamento', text: 'Indica il servizio che desideri. Se hai dubbi, chiedici un consiglio.' },
+  { icon: 'message-circle', title: WHATSAPP ? 'Scrivici su WhatsApp' : 'Contattaci', text: 'Comunicaci il giorno e l’orario che preferisci.' },
+  { icon: 'calendar-heart', title: 'Attendi la conferma', text: 'L’appuntamento è valido dopo la conferma del salone.' },
 ] as const;
 ---
 <Base title="Jenny Nails Studio · Manicure, semipermanente e nail art" schema={[faqSchema]}>
@@ -31,10 +36,10 @@ const steps = [
       <div class="hero-txt">
         <p class="eyebrow">Salone di manicure{SITE.address && ` · ${SITE.address.city}`}</p>
         <h1>Le tue unghie, <em>curate</em> con calma.</h1>
-        <p class="lead muted">Manicure, semipermanente, ricostruzione e nail art{SITE.byAppointment && ', su appuntamento'}. Scegli il trattamento, noi ti proponiamo l’orario.</p>
+        <p class="lead muted">Manicure, semipermanente, ricostruzione e nail art{SITE.byAppointment && ', su appuntamento'}. Scegli il trattamento e prenota il tuo appuntamento.</p>
         <div class="ctas">
           <a class="btn btn-primary" href={BOOK_HREF} rel={bookExt ? 'noopener' : undefined}>
-            <Icon name={WHATSAPP ? 'message-circle' : 'calendar-heart'} />{WHATSAPP ? 'Prenota su WhatsApp' : 'Prenota un appuntamento'}
+            <Icon name={BOOKING_ONLINE ? 'calendar-heart' : (WHATSAPP ? 'message-circle' : 'calendar-heart')} />{BOOKING_ONLINE ? 'Prenota online' : (WHATSAPP ? 'Prenota su WhatsApp' : 'Prenota un appuntamento')}
           </a>
           <a class="btn btn-ghost" href="/trattamenti/">Vedi i trattamenti</a>
         </div>
@@ -79,18 +84,17 @@ const steps = [
     </div>
   </section>
 
-  <section class="section">
+  <section class="section booking-guide" id="come-prenotare" aria-labelledby="booking-guide-title">
     <div class="wrap">
       <div class="head">
         <p class="eyebrow">Come si prenota</p>
-        <h2 class="title-lg">Tre passi, <em>niente app</em> da scaricare</h2>
+        <h2 id="booking-guide-title">Prenota in tre passaggi</h2>
       </div>
       <ol class="steps">
         {steps.map((s, i) => (
           <li>
             <span class="num" aria-hidden="true">{i + 1}</span>
-            <h3><Icon name={s.icon} size={20} />{s.title}</h3>
-            <p class="muted">{s.text}</p>
+            <div class="step-copy"><h3>{s.title}</h3><p class="muted">{s.text}</p></div>
           </li>
         ))}
       </ol>
@@ -162,9 +166,10 @@ const steps = [
     <div class="wrap">
       <div class="card final">
         <h2 class="title-lg">Voglia di unghie <em>nuove</em>?</h2>
-        <p class="muted">Scrivici il trattamento e il giorno che preferisci.</p>
+        <p class="muted">{BOOKING_ONLINE ? 'Scegli trattamento, giorno e orario dal modulo online.' : 'Scrivici il trattamento e il giorno che preferisci.'}</p>
         <div class="ctas">
-          {wa && <a class="btn btn-primary" href={wa} rel="noopener"><Icon name="message-circle" />Scrivi su WhatsApp</a>}
+          {BOOKING_ONLINE && <a class="btn btn-primary" href={BOOK_HREF}><Icon name="calendar-heart" />Prenota online</a>}
+          {wa && <a class={BOOKING_ONLINE ? 'btn btn-ghost' : 'btn btn-primary'} href={wa} rel="noopener"><Icon name="message-circle" />Scrivi su WhatsApp</a>}
           {SITE.phone && <a class={wa ? 'btn btn-ghost' : 'btn btn-primary'} href={`tel:${SITE.phone.tel}`}><Icon name="phone" />Chiama {SITE.phone.display}</a>}
           {!wa && !SITE.phone && <a class="btn btn-primary" href="/contatti/">Contatti</a>}
         </div>
@@ -202,11 +207,15 @@ const steps = [
   .tshort { font-size: 15.5px; }
   .tprice { font-weight: 700; color: var(--malva); }
 
-  .steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; }
-  .steps li { display: flex; flex-direction: column; gap: 10px; padding-top: 20px; border-top: 1px solid var(--bordo); }
-  .num { font-family: var(--serif); font-style: italic; font-size: 40px; color: var(--malva); line-height: 1; }
-  .steps h3 { font-family: var(--sans); font-weight: 700; font-size: 18px; display: flex; align-items: center; gap: 8px; letter-spacing: 0; }
-  .steps h3 :global(.icon) { color: var(--malva); }
+  .booking-guide { padding-block:32px; }
+  .booking-guide .head { margin-bottom:18px; }
+  .booking-guide h2 { font-family:var(--sans);font-size:clamp(21px,3vw,27px);font-weight:650;letter-spacing:-.02em;line-height:1.3; }
+  .steps { list-style:none;margin:0;padding:0;display:grid;grid-template-columns:minmax(0,1fr);gap:0; }
+  .steps li { display:grid;grid-template-columns:28px minmax(0,1fr);gap:12px;align-items:start;padding:14px 0;border-top:1px solid var(--bordo);min-width:0; }
+  .num { display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--cipria);color:var(--malva);font-family:var(--sans);font-size:13px;font-weight:700;line-height:1; }
+  .steps h3 { margin:0 0 4px;font-family:var(--sans);font-size:16px;font-weight:650;line-height:1.4;letter-spacing:0; }
+  .steps p { margin:0;font-size:14px;line-height:1.55;overflow-wrap:anywhere; }
+  @media(min-width:900px) { .steps { grid-template-columns:repeat(3,minmax(0,1fr));gap:24px; } .booking-guide { padding-block:40px; } }
 
   .gal { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
   .gal img { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; border-radius: 16px; }
@@ -243,7 +252,6 @@ const steps = [
     .hero-art { max-width:420px; border-radius:22px; }
     .hero-img { aspect-ratio: 4 / 3; }
     .studio { grid-template-columns: 1fr; gap: 32px; }
-    .steps { grid-template-columns: 1fr; gap: 20px; }
   }
   @media (max-width: 760px) {
     /* Foto d'impatto ma compatta: titolo e prenotazione restano visibili senza scorrere troppo. */
