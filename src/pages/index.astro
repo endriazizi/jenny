@@ -125,7 +125,7 @@ const steps = [
           <li><Icon name="palette" size={20} />Colori e decorazioni scelti insieme</li>
         </ul>
       </div>
-      {(addr || SITE.hours) && (
+      {(addr || true) && (
         <div class="card info">
           {addr && (
             <div>
@@ -134,12 +134,10 @@ const steps = [
               {dir && <a class="btn btn-ghost sm" href={dir} rel="noopener"><Icon name="navigation" size={18} />Indicazioni</a>}
             </div>
           )}
-          {SITE.hours && (
-            <div>
-              <h3><Icon name="clock" size={20} />Orari</h3>
-              <Hours />
-            </div>
-          )}
+          <div>
+            <h3><Icon name="clock" size={20} />Orari</h3>
+            <Hours />
+          </div>
         </div>
       )}
     </div>
@@ -185,7 +183,8 @@ const steps = [
   .lead { font-size: 19px; max-width: 34ch; }
   .ctas { display: flex; flex-wrap: wrap; gap: 12px; }
   .call { font-size: 15px; }
-  .hero-img { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; border-radius: 200px 200px var(--radius) var(--radius); box-shadow: var(--ombra); }
+  .hero-art { overflow:hidden; border-radius:24px; min-width:0; max-width:480px; width:100%; margin-inline:auto; box-shadow:var(--ombra); }
+  .hero-img { display:block; width:100%; height:auto; aspect-ratio: 4 / 5; object-fit:cover; object-position:center 38%; border-radius:inherit; }
 
   /* Cinque "unghie" di colore: decorazione finché non ci sono foto vere. */
   .swatches { position: relative; aspect-ratio: 1; max-width: 440px; margin-inline: auto; display: flex; align-items: center; justify-content: center; gap: 4%; }
@@ -243,11 +242,20 @@ const steps = [
     .hero-in { grid-template-columns: 1fr; gap: 12px; }
     .hero-art { order: -1; }
     .swatches { max-width: 210px; }
-    .hero-img { aspect-ratio: 4 / 3; border-radius: var(--radius); }
+    .hero-art { max-width:420px; border-radius:22px; }
+    .hero-img { aspect-ratio: 4 / 3; }
     .studio { grid-template-columns: 1fr; gap: 32px; }
     .steps { grid-template-columns: 1fr; gap: 20px; }
   }
   @media (max-width: 760px) {
+    /* Foto d'impatto ma compatta: titolo e prenotazione restano visibili senza scorrere troppo. */
+    .hero { padding-block:14px 36px; }
+    .hero-in { gap:18px; }
+    .hero-art { width:min(100%, 340px); max-width:100%; border-radius:18px; }
+    .hero-img { aspect-ratio: 16 / 10; object-position:center 39%; }
+    .hero-txt { gap:14px; }
+    h1 { font-size:clamp(34px, 9vw, 48px); }
+
     .lead { font-size: 17px; }
     .ctas .btn { flex: 1 1 100%; }
     .tgrid { grid-template-columns: 1fr; }
@@ -277,7 +285,9 @@ const steps = [
     img.className = 'hero-img';
     img.width = 480;
     img.height = 600;
-    img.style.cssText = 'width:100%;height:auto;aspect-ratio:4/5;object-fit:cover;object-position:' + x + '% ' + y + '%;transform:scale(' + (zoom / 100) + ')';
+    img.style.objectPosition = x + '% ' + y + '%';
+    // Lo zoom resta confinato alla cornice: non spinge né copre il testo su mobile.
+    if (zoom > 100) { img.style.transform = 'scale(' + (zoom / 100) + ')'; img.style.transformOrigin = x + '% ' + y + '%'; }
     img.decoding = 'async';
     img.onload = () => { host.replaceChildren(img); };
     img.src = apiOrigin + path;
