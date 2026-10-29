@@ -12,7 +12,7 @@ import { BOOKING_API } from '../data/booking';
   </section>
 </Base>
 <script>
-  import { api, h } from '../scripts/booking-client';
+  import { api, h, ApiError } from '../scripts/booking-client';
   const root = document.getElementById('review')!;
   const view = document.getElementById('review-view')!;
   const token = location.hash.slice(1);
@@ -21,14 +21,16 @@ import { BOOKING_API } from '../data/booking';
   async function start() {
     if (!/^[a-f0-9]{64}$/.test(token)) { view.textContent = 'Link non disponibile. Contatta il salone per una nuova richiesta.'; return; }
     try {
-      const state = await api<{ feedback_submitted: boolean; feedback_rating?: number | null }>(base, '/reviews/landing', { token });
+      type ReviewState = { feedback_submitted: boolean; feedback_rating?: number | null; google_available?: boolean };
+      const state = await api<ReviewState>(base, '/reviews/landing', { token });
+      let googleAvailable = state.google_available !== false;
       const google = h('a', { class: 'btn btn-primary review-google', href: base + '/reviews/r/' + token, target: '_blank', rel: 'noopener noreferrer' }, '⭐ Scrivi una recensione su Google');
       const note = h('p', { class: 'small muted' }, 'La recensione Google è facoltativa e si scrive direttamente su Google. Puoi usarla con qualsiasi valutazione.');
       const feedbackBox = h('div', { class: 'review-private' });
       function thankYou(rating: number) {
         const heading = h('h2', {}, 'Grazie per il tuo feedback! 💗');
         const saved = h('p', {}, 'La tua valutazione privata è stata registrata. Leggeremo con attenzione il tuo messaggio.');
-        if (rating === 5) {
+        if (rating === 5 && googleAvailable) {
           view.replaceChildren(heading, saved, h('h3', {}, 'Ti va di raccontarlo anche su Google? ✨'),
             h('p', {}, 'Ci fa piacere sapere che ti sei trovata bene! Se ti va, condividi la tua esperienza su Google: aiuterai altre persone a conoscere Jenny Nails Studio. 💗'), google, note);
         } else {
@@ -75,7 +77,20 @@ import { BOOKING_API } from '../data/booking';
         try {
           await api(base, '/reviews/feedback', { token, rating, text: text.value });
           thankYou(rating);
-        } catch (error) { status.textContent = (error as Error).message; submit.disabled = false; }
+        } catch (error) {
+          // A lost response or a retry after saving must restore the saved completion step.
+          if (error instanceof ApiError && (error.status === 0 || error.status === 409 || error.status >= 500)) {
+            try {
+              const saved = await api<ReviewState>(base, '/reviews/landing', { token });
+              if (saved.feedback_submitted) {
+                googleAvailable = saved.google_available !== false;
+                thankYou(Number(saved.feedback_rating) || 0);
+                return;
+              }
+            } catch (_) { /* Keep the original failure and allow another attempt. */ }
+          }
+          status.textContent = (error as Error).message; submit.disabled = false;
+        }
       });
       view.replaceChildren(form);
       update();
@@ -105,3 +120,4 @@ import { BOOKING_API } from '../data/booking';
   @media (max-width:400px) { :global(.jn-review .panel) { padding:clamp(14px,4vw,24px); } }
   @media (prefers-reduced-motion:reduce) { :global(.jn-review .review-star span) { transition:none; } }
 </style>
+
