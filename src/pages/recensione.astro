@@ -3,7 +3,7 @@ import Base from '../layouts/Base.astro';
 import '../styles/booking.css';
 import { BOOKING_API } from '../data/booking';
 ---
-<Base title="La tua esperienza · Jenny Nails Studio" description="Racconta la tua esperienza da Jenny Nails Studio." noindex>
+<Base title="La tua esperienza · Jenny Nails Studio" description="Racconta la tua esperienza da Jenny Nails Studio." noindex hideActionBar>
   <section class="bk jn-review" id="review" data-api={BOOKING_API}>
     <p class="eyebrow">Jenny Nails Studio</p>
     <h1 class="title-lg">La tua <em>esperienza</em></h1>
@@ -75,7 +75,7 @@ import { BOOKING_API } from '../data/booking';
   void start();
 </script>
 <style>
-  :global(.jn-review) { padding-bottom:calc(150px + env(safe-area-inset-bottom,0px)); }
+  :global(.jn-review) { padding-bottom:calc(48px + env(safe-area-inset-bottom,0px)); }
   :global(.jn-review .review-lead) { max-width:40rem;font-size:clamp(1.05rem,2.5vw,1.3rem);line-height:1.6;margin:0 0 1.2rem; }
   :global(.jn-review .review-form) { display:grid;gap:1rem; }
   :global(.jn-review .review-votes) { display:flex;flex-wrap:nowrap;justify-content:space-between;gap:clamp(2px,2vw,14px);border:0;padding:0;margin:0;min-width:0; }
