@@ -21,13 +21,22 @@ import { BOOKING_API } from '../data/booking';
   async function start() {
     if (!/^[a-f0-9]{64}$/.test(token)) { view.textContent = 'Link non disponibile. Contatta il salone per una nuova richiesta.'; return; }
     try {
-      const state = await api<{ feedback_submitted: boolean; highlight_threshold?: number }>(base, '/reviews/landing', { token });
-      const threshold = Math.max(1, Math.min(5, Number(state.highlight_threshold) || 3));
+      const state = await api<{ feedback_submitted: boolean; feedback_rating?: number | null }>(base, '/reviews/landing', { token });
       const google = h('a', { class: 'btn btn-primary review-google', href: base + '/reviews/r/' + token, target: '_blank', rel: 'noopener noreferrer' }, '⭐ Scrivi una recensione su Google');
       const note = h('p', { class: 'small muted' }, 'La recensione Google è facoltativa e si scrive direttamente su Google. Puoi usarla con qualsiasi valutazione.');
       const feedbackBox = h('div', { class: 'review-private' });
+      function thankYou(rating: number) {
+        const heading = h('h2', {}, 'Grazie per il tuo feedback! 💗');
+        const saved = h('p', {}, 'La tua valutazione privata è stata registrata. Leggeremo con attenzione il tuo messaggio.');
+        if (rating === 5) {
+          view.replaceChildren(heading, saved, h('h3', {}, 'Ti va di raccontarlo anche su Google? ✨'),
+            h('p', {}, 'Ci fa piacere sapere che ti sei trovata bene! Se ti va, condividi la tua esperienza su Google: aiuterai altre persone a conoscere Jenny Nails Studio. 💗'), google, note);
+        } else {
+          view.replaceChildren(heading, saved, h('p', {}, 'Grazie per il tempo che ci hai dedicato: la tua opinione ci aiuta a migliorare.'));
+        }
+      }
       if (state.feedback_submitted) {
-        view.replaceChildren(h('h2', {}, 'Grazie di cuore! 💗'), h('p', {}, 'Il tuo feedback privato è stato registrato.'), google, note);
+        thankYou(Number(state.feedback_rating) || 0);
         return;
       }
       const votes = h('fieldset', { class: 'review-votes' }, h('legend', {}, 'Come è stata la tua esperienza?'));
@@ -46,21 +55,6 @@ import { BOOKING_API } from '../data/booking';
         h('p', { class: 'small muted' }, 'Il voto e il commento privati sono visibili soltanto allo staff. Non inserire dati sensibili.'),
         submit, status);
       const form = h('form', { class: 'review-form' }, votes, description, feedbackBox);
-      let selectedPath: 'google' | 'private' | null = null;
-      const switchPath = h('button', { class: 'btn btn-ghost', type: 'button' }, '') as HTMLButtonElement;
-      switchPath.addEventListener('click', () => {
-        selectedPath = selectedPath === 'google' ? 'private' : 'google';
-        renderPath();
-      });
-      function renderPath() {
-        if (selectedPath === 'google') {
-          switchPath.textContent = 'Preferisco inviare un messaggio privato';
-          feedbackBox.replaceChildren(h('h2', {}, 'La tua esperienza conta ✨'), h('p', {}, 'Ti va di raccontarla anche su Google? Il tuo giudizio aiuta altre persone a conoscerci. 💗'), google, note, switchPath);
-        } else {
-          switchPath.textContent = 'Preferisco scrivere su Google';
-          feedbackBox.replaceChildren(h('h2', {}, 'La tua opinione conta 💗'), h('p', {}, 'Raccontaci la tua esperienza: leggeremo con attenzione il tuo messaggio.'), privateFields, switchPath);
-        }
-      }
       function update() {
         const rating = Number(radios.find(r => r.checked)?.value || 0);
         radios.forEach((r, i) => r.parentElement?.classList.toggle('selected', !!rating && i < rating));
@@ -68,8 +62,8 @@ import { BOOKING_API } from '../data/booking';
         if (!rating) {
           feedbackBox.replaceChildren(h('p', { class: 'small muted' }, 'Scegli le stelle per continuare.'));
         } else {
-          selectedPath = rating >= threshold ? 'google' : 'private';
-          renderPath();
+          feedbackBox.replaceChildren(h('h2', {}, 'Un messaggio solo per noi 💗'),
+            h('p', {}, 'Condividi la tua esperienza con il salone. La valutazione e il commento restano privati.'), privateFields);
         }
       }
       radios.forEach(r => r.addEventListener('change', update));
@@ -80,7 +74,7 @@ import { BOOKING_API } from '../data/booking';
         submit.disabled = true;
         try {
           await api(base, '/reviews/feedback', { token, rating, text: text.value });
-          view.replaceChildren(h('h2', {}, 'Grazie per il tuo feedback! 💗'), h('p', {}, 'Il tuo messaggio privato è stato registrato.'), google, note);
+          thankYou(rating);
         } catch (error) { status.textContent = (error as Error).message; submit.disabled = false; }
       });
       view.replaceChildren(form);
