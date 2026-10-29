@@ -1,3 +1,4 @@
+import { BOOKING_ONLINE } from './booking';
 /**
  * Domande frequenti. Solo risposte vere per qualunque salone su appuntamento:
  * le regole specifiche (disdette, acconti, tempi) vanno confermate con Jenny prima di aggiungerle.
@@ -7,7 +8,7 @@ export interface Faq { q: string; a: string }
 export const FAQS: Faq[] = [
   {
     q: 'Come prenoto un appuntamento?',
-    a: 'Scrivi su WhatsApp o chiama: dicci quale trattamento vuoi e quando preferiresti venire, e ti proponiamo il primo orario libero. L’appuntamento è confermato quando ricevi la risposta.',
+    a: BOOKING_ONLINE ? 'Premi Prenota online, scegli trattamento, giorno e orario, poi inserisci i dati e verifica l’email con il codice ricevuto. L’appuntamento è valido quando la richiesta risulta confermata. Per assistenza puoi scriverci o chiamare.' : 'Scrivi su WhatsApp o chiama: indicaci trattamento, giorno e orario preferiti. L’appuntamento è valido dopo la conferma del salone.',
   },
   {
     q: 'Posso portare un’idea per la nail art?',
