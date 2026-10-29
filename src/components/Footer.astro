@@ -11,7 +11,7 @@ const addr = fullAddress();
 <footer class="ftr">
   <div class="wrap grid">
     <div>
-      <a href="/" class="brand" aria-label="Jenny Nails Studio, home"><span id="jenny-footer-mark"><Wordmark size="lg" /></span></a>
+      <a href="/" class="brand" aria-label="Jenny Nails Studio, home"><span class="footer-mark"><Wordmark size="sm" /></span></a>
       <p class="tag">{SITE.tagline}</p>
     </div>
     {(addr || SITE.phone || WHATSAPP || SITE.email || SITE.instagram) && (
@@ -55,7 +55,8 @@ const addr = fullAddress();
   .ftr { background: var(--cipria); color: var(--testo-2); font-size: 15px; padding-top: 56px; border-top: 1px solid var(--bordo); }
   .ftr a { color: var(--inchiostro); text-decoration: none; }
   .ftr a:hover { color: var(--malva); text-decoration: underline; }
-  .brand { display: inline-flex; margin-bottom: 14px; }
+  .brand { display: inline-flex; margin-bottom: 14px; align-items: center; border-radius: 14px; }
+  .footer-mark { display: inline-flex; width: 130px; min-height: 46px; border-radius: 14px; overflow: hidden; align-items: center; }
   .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 32px; }
   .grid p + p { margin-top: 6px; }
   .ic { display: flex; gap: 10px; align-items: flex-start; }
@@ -69,20 +70,4 @@ const addr = fullAddress();
   .credit .build { font-variant-numeric: tabular-nums; }
 </style>
 
-<script>
-  import { BOOKING_API } from '../data/booking';
-  const mark = document.getElementById('jenny-footer-mark');
-  const apiOrigin = new URL(BOOKING_API).origin;
-  fetch(BOOKING_API + '/catalog').then(r => r.ok ? r.json() : null).then(data => {
-    const path: unknown = data?.branding?.footer_url || data?.branding?.logo_url;
-    if (!mark || typeof path !== 'string' || !path.startsWith('/api/jenny/public/media/')) return;
-    if (!/^[a-f0-9]{24}[.](jpg|png|webp)$/.test(path.split('/').pop() || '')) return;
-    const img = document.createElement('img');
-    img.alt = 'Jenny Nails Studio';
-    img.width = 180;
-    img.height = 72;
-    img.style.cssText = 'max-width:180px;max-height:90px;width:auto;height:auto;object-fit:contain;';
-    img.onload = () => mark.replaceChildren(img);
-    img.src = apiOrigin + path;
-  }).catch(() => { /* footer statico predefinito */ });
-</script>
+<!-- Marchio statico: nessuna sostituzione dopo il caricamento, niente flicker. -->
