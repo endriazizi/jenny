@@ -22,7 +22,7 @@ import { BOOKING_API } from '../data/booking';
     if (!/^[a-f0-9]{64}$/.test(token)) { view.textContent = 'Link non disponibile. Contatta il salone per una nuova richiesta.'; return; }
     try {
       const state = await api<{ feedback_submitted: boolean; highlight_threshold?: number }>(base, '/reviews/landing', { token });
-      const threshold = Math.max(1, Math.min(5, Number(state.highlight_threshold) || 4));
+      const threshold = Math.max(1, Math.min(5, Number(state.highlight_threshold) || 3));
       const google = h('a', { class: 'btn btn-primary review-google', href: base + '/reviews/r/' + token, target: '_blank', rel: 'noopener noreferrer' }, '⭐ Scrivi una recensione su Google');
       const note = h('p', { class: 'small muted' }, 'La recensione Google è facoltativa e si scrive direttamente su Google. Puoi usarla con qualsiasi valutazione.');
       const feedbackBox = h('div', { class: 'review-private' });
