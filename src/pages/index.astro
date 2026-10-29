@@ -125,8 +125,7 @@ const steps = [
           <li><Icon name="palette" size={20} />Colori e decorazioni scelti insieme</li>
         </ul>
       </div>
-      {(addr || true) && (
-        <div class="card info">
+      <div class="card info">
           {addr && (
             <div>
               <h3><Icon name="map-pin" size={20} />Dove siamo</h3>
@@ -138,8 +137,7 @@ const steps = [
             <h3><Icon name="clock" size={20} />Orari</h3>
             <Hours />
           </div>
-        </div>
-      )}
+      </div>
     </div>
   </section>
 
