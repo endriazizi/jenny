@@ -64,4 +64,50 @@ try {
     await context.close();
     console.log('PASS '+scenario.name);
   }
+
+  for (const scenario of [
+    {device:devices['iPhone 13'],rating:1,marketing:false,birth:''},
+    {device:devices['Pixel 7'],rating:5,marketing:true,birth:'1990-05-20'}
+  ]) {
+    const context=await browser.newContext(scenario.device);
+    const page=await context.newPage();
+    const submissions=[];
+    await page.route('**/api/jenny/public/reviews/public',async route=>{
+      const body=route.request().postDataJSON();submissions.push(body);
+      await route.fulfill({status:200,contentType:'application/json',headers:{'access-control-allow-origin':'*'},
+        body:JSON.stringify({saved:true,token:body.submission_token,feedback_rating:body.rating})});
+    });
+    await page.route('**/api/jenny/public/reviews/landing',route=>route.fulfill({
+      status:200,contentType:'application/json',headers:{'access-control-allow-origin':'*'},
+      body:JSON.stringify({feedback_submitted:true,feedback_rating:scenario.rating})}));
+    await page.goto(base+'/lascia-una-recensione/',{waitUntil:'domcontentloaded'});
+    assert.equal(await page.locator('input[name=marketing_consent]').isChecked(),false,'marketing must default off');
+    await page.locator('#continue-review').click();
+    assert.equal(await page.locator('#feedback-step').isVisible(),false,'contact fields and privacy must be completed first');
+    await page.locator('input[name=first_name]').fill('Giulia');
+    await page.locator('input[name=last_name]').fill('Rossi');
+    await page.locator('input[name=phone]').fill('3331234567');
+    if(scenario.birth) await page.locator('input[name=birth_date]').fill(scenario.birth);
+    await page.locator('input[name=privacy_notice]').check();
+    if(scenario.marketing) await page.locator('input[name=marketing_consent]').check();
+    await page.locator('#continue-review').click();
+    await page.locator('#feedback-step').waitFor({state:'visible'});
+    const positions=await page.locator('.star').evaluateAll(elements=>elements.map(el=>el.getBoundingClientRect().y));
+    assert.ok(positions.every(y=>Math.abs(y-positions[0])<2),'public stars must be horizontal');
+    await page.locator('input[name=rating]').nth(scenario.rating-1).check({force:true});
+    await page.locator('textarea[name=text]').fill('Un messaggio privato 💗');
+    await page.locator('#submit-review').click();
+    await page.getByRole('heading',{name:/Grazie per il tuo feedback/}).waitFor();
+    assert.equal(submissions.length,1);
+    assert.equal(submissions[0].marketing_consent,scenario.marketing);
+    assert.equal(submissions[0].birth_date,scenario.birth);
+    assert.equal(submissions[0].rating,scenario.rating);
+    assert.equal(submissions[0].privacy_notice,true);
+    assert.match(submissions[0].submission_token,/^[a-f0-9]{64}$/);
+    assert.equal(await page.getByRole('link',{name:/Scrivi una recensione su Google/}).count(),scenario.rating===5?1:0);
+    assert.equal(new URL(page.url()).search,'','no personal data in URL');
+    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+2),false);
+    await context.close();
+    console.log('PASS public review '+scenario.rating+' stars');
+  }
 } finally {await browser.close();}
