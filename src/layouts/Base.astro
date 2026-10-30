@@ -49,6 +49,11 @@ if (SITE.address) {
     addressCountry: SITE.address.country,
   };
 }
+if (SITE.address?.city === 'Castelraimondo') {
+  business.areaServed = ['Castelraimondo', 'Matelica', 'Camerino', 'San Severino Marche', 'Pioraco', 'Fiuminata', 'Gagliole', 'Esanatoglia', 'Sefro', 'Serrapetrona', 'Cerreto d’Esi', 'Muccia', 'Fabriano', 'Tolentino'].map((name) => ({
+    '@type': 'City', name,
+  }));
+}
 if (SITE.hours) {
   business.openingHoursSpecification = SITE.hours.flatMap((h) =>
     h.slots.map((s) => {
