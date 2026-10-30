@@ -43,7 +43,7 @@ const wa = waLink(WA_HELLO);
   interface Service { id: number; category_id: number | null; name: string; description: string | null; price_cents: number | null; duration_min: number }
   interface Catalog {
     salon: { name: string; phone: string | null };
-    rules: { max_advance_days: number; customer_change_limit_h: number; auto_confirm: boolean; privacy_version: string; whatsapp_available: boolean; public_show_price?: boolean; public_show_duration?: boolean };
+    rules: { max_advance_days: number; customer_change_limit_h: number; auto_confirm: boolean; privacy_version: string; whatsapp_available: boolean; public_show_price?: boolean; public_show_duration?: boolean; public_show_busy_slots?: boolean };
     categories: { id: number; name: string }[];
     services: Service[];
   }
@@ -131,6 +131,7 @@ const wa = waLink(WA_HELLO);
       const ids = [...state.selected].join(',');
       const picker = slotPicker({
         days: Math.min(Math.max(cat.rules.max_advance_days, 1), 60),
+        showBusy: cat.rules.public_show_busy_slots !== false,
         load: (date) => api<{ slots: Slot[] }>(API, `/availability?date=${date}&services=${ids}`),
         loadDays: (from, count) => api<{ days: DaySummary[] }>(API, `/availability/days?from=${from}&days=${count}&services=${ids}`),
         onPick: (date, time) => { state.date = date; state.time = time; stepDetails(); },
