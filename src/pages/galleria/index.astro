@@ -40,7 +40,7 @@ import { BOOKING_API } from '../../data/booking';
 .photo:hover :global(img){transform:scale(1.035)}.photo:focus-visible{outline:3px solid var(--malva);outline-offset:-3px}
 .loading-status{display:flex;align-items:center;gap:10px;min-height:36px;color:var(--malva)}.polish{display:inline-block;animation:polish 1.5s ease-in-out infinite}
 @keyframes polish{0%,100%{opacity:.4;transform:rotate(-25deg) scale(.8)}50%{opacity:1;transform:rotate(25deg) scale(1.2)}}
-.empty{padding:24px 0}#gallery-more{display:block;margin:24px auto}
+.empty{padding:24px 0}[hidden]{display:none!important}#gallery-more{display:block;margin:24px auto}
 .viewer{position:fixed;inset:0;width:100vw;max-width:none;height:100dvh;max-height:none;border:0;background:#1b1419;color:white;padding:calc(14px + env(safe-area-inset-top)) 12px calc(14px + env(safe-area-inset-bottom));box-sizing:border-box}
 .viewer[open]{display:grid;grid-template-columns:40px minmax(0,1fr) 40px;grid-template-rows:44px minmax(0,1fr) auto;align-items:center}
 .viewer::backdrop{background:rgba(0,0,0,.88)}
