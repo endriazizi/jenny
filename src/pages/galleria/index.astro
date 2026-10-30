@@ -80,11 +80,23 @@ import { BOOKING_API } from '../../data/booking';
     empty.hidden=all.length!==0;
     more.hidden=!hasMore;
   }
+  function renderCaption(text){
+    caption.replaceChildren();
+    for(const line of String(text||'').split('\n')){
+      if(caption.childNodes.length)caption.append(document.createElement('br'));
+      const parts=line.split(/(\\*[^*\\n]+\\*)/g);
+      for(const part of parts){
+        if(/^\\*[^*\\n]+\\*$/.test(part)){
+          const strong=document.createElement('strong');strong.textContent=part.slice(1,-1);caption.append(strong);
+        }else caption.append(document.createTextNode(part));
+      }
+    }
+  }
   function show(i){
     if(!all.length)return;
     active=(i+all.length)%all.length;
     large.src=all[active].src;large.alt=all[active].alt;
-    caption.textContent=all[active].caption||all[active].alt;
+    renderCaption(all[active].caption||all[active].alt);
     share.href=Number.isSafeInteger(Number(all[active].id))&&Number(all[active].id)>0?apiBase+'/gallery/share/'+all[active].id:all[active].src;
     copy.hidden=!all[active].caption;counter.textContent=(active+1)+' / '+all.length;
     if(!dialog.open)dialog.showModal();
