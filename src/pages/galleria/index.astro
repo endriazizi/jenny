@@ -84,9 +84,9 @@ import { BOOKING_API } from '../../data/booking';
     caption.replaceChildren();
     for(const line of String(text||'').split('\n')){
       if(caption.childNodes.length)caption.append(document.createElement('br'));
-      const parts=line.split(/(\\*[^*\\n]+\\*)/g);
+      const parts=line.split(/(\*[^*\n]+\*)/g);
       for(const part of parts){
-        if(/^\\*[^*\\n]+\\*$/.test(part)){
+        if(/^\*[^*\n]+\*$/.test(part)){
           const strong=document.createElement('strong');strong.textContent=part.slice(1,-1);caption.append(strong);
         }else caption.append(document.createTextNode(part));
       }
