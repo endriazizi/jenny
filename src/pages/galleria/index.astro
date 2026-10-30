@@ -1,0 +1,115 @@
+---
+import { Image } from 'astro:assets';
+import Base from '../../layouts/Base.astro';
+import { GALLERIA } from '../../data/galleria';
+import { BOOKING_API } from '../../data/booking';
+---
+<Base title="Galleria manicure e nail art · Jenny Nails Studio" description="Scopri le manicure e nail art realizzate da Jenny Nails Studio.">
+  <section class="section">
+    <div class="wrap">
+      <p class="eyebrow">Jenny Nails Studio</p>
+      <h1>La nostra <em>galleria</em></h1>
+      <p class="muted intro">Colori, dettagli e ispirazioni dai nostri lavori.</p>
+      <div id="gallery-status" class="loading-status" role="status" aria-live="polite"><span class="polish" aria-hidden="true">✦</span> Stiamo preparando le ispirazioni...</div>
+      <ul id="gallery-grid" class="gallery" aria-label="Fotografie dei lavori">
+        {GALLERIA.map((g,i) => (
+          <li class="tile">
+            <button type="button" class="photo" data-index={i} aria-label={`Apri foto ${i+1}`}>
+              <Image src={g.src} alt={g.alt} widths={[320,480,720,960]} sizes="(max-width: 600px) 48vw, (max-width: 960px) 31vw, 24vw" loading={i < 4 ? 'eager' : 'lazy'} decoding="async" />
+            </button>
+          </li>
+        ))}
+      </ul>
+      <p id="gallery-empty" class="muted empty" hidden>Le nuove fotografie arriveranno presto.</p>
+      <button id="gallery-more" type="button" class="btn btn-ghost" hidden>Carica altre foto</button>
+    </div>
+  </section>
+  <dialog id="gallery-viewer" class="viewer" aria-label="Fotografia ingrandita">
+    <div class="viewer-head"><span id="gallery-counter"></span><button id="gallery-close" type="button" aria-label="Chiudi foto">✕</button></div>
+    <button id="gallery-prev" class="arrow" type="button" aria-label="Foto precedente">‹</button>
+    <img id="gallery-large" alt="" />
+    <button id="gallery-next" class="arrow" type="button" aria-label="Foto successiva">›</button>
+    <p id="gallery-caption"></p>
+  </dialog>
+</Base>
+<style>
+.intro{margin:8px 0 28px}.gallery{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.tile{min-width:0;aspect-ratio:3/4;border-radius:16px;overflow:hidden;background:#f3e8e8}
+.photo{width:100%;height:100%;border:0;padding:0;cursor:zoom-in;background:transparent;display:block}
+.photo :global(img){height:100%;width:100%;object-fit:cover;display:block;transition:transform .25s ease}
+.photo:hover :global(img){transform:scale(1.035)}.photo:focus-visible{outline:3px solid var(--malva);outline-offset:-3px}
+.loading-status{display:flex;align-items:center;gap:10px;min-height:36px;color:var(--malva)}.polish{display:inline-block;animation:polish 1.5s ease-in-out infinite}
+@keyframes polish{0%,100%{opacity:.4;transform:rotate(-25deg) scale(.8)}50%{opacity:1;transform:rotate(25deg) scale(1.2)}}
+.empty{padding:24px 0}#gallery-more{display:block;margin:24px auto}
+.viewer{position:fixed;inset:0;width:100vw;max-width:none;height:100dvh;max-height:none;border:0;background:#1b1419;color:white;padding:calc(14px + env(safe-area-inset-top)) 12px calc(14px + env(safe-area-inset-bottom));box-sizing:border-box}
+.viewer[open]{display:grid;grid-template-columns:40px minmax(0,1fr) 40px;grid-template-rows:44px minmax(0,1fr) auto;align-items:center}
+.viewer::backdrop{background:rgba(0,0,0,.88)}
+.viewer-head{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center}
+.viewer button{color:white;background:transparent;border:0;cursor:pointer;min-width:44px;min-height:44px;font-size:25px}
+.viewer img{grid-column:2;grid-row:2;width:100%;height:100%;max-height:100%;object-fit:contain}
+.viewer .arrow:first-of-type{grid-column:1;grid-row:2}.viewer .arrow:last-of-type{grid-column:3;grid-row:2}
+.viewer p{grid-column:1/-1;text-align:center;margin:10px 0;font-size:14px}
+@media(min-width:640px){.gallery{grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}}
+@media(min-width:1024px){.gallery{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(prefers-reduced-motion:reduce){.polish{animation:none}.photo :global(img){transition:none}}
+</style>
+<script define:vars={{ apiBase: BOOKING_API }}>
+  const grid = document.getElementById('gallery-grid');
+  const status = document.getElementById('gallery-status');
+  const empty = document.getElementById('gallery-empty');
+  const more = document.getElementById('gallery-more');
+  const dialog = document.getElementById('gallery-viewer');
+  const large = document.getElementById('gallery-large');
+  const caption = document.getElementById('gallery-caption');
+  const counter = document.getElementById('gallery-counter');
+  let active=0, all=[], page=0, hasMore=false, busy=false;
+  const local=Array.from(grid.querySelectorAll('img')).map(img=>({src:img.currentSrc||img.src,alt:img.alt}));
+  all=local;
+  const validImage=(raw)=>{
+    if(!raw || typeof raw!=='object')return null;
+    const url=raw.url||raw.image_url;
+    if(typeof url!=='string')return null;
+    let parsed;try{parsed=new URL(url,new URL(apiBase).origin)}catch{return null}
+    if(parsed.protocol!=='https:' || parsed.origin!==new URL(apiBase).origin || !parsed.pathname.startsWith('/api/jenny/public/media/'))return null;
+    return {src:parsed.href,alt:typeof raw.alt==='string'?raw.alt:'Manicure Jenny Nails Studio'};
+  };
+  function bindPhotos(){
+    grid.querySelectorAll('button.photo').forEach((b,i)=>{b.onclick=()=>show(i)});
+    empty.hidden=all.length!==0;
+    more.hidden=!hasMore;
+  }
+  function show(i){
+    if(!all.length)return;
+    active=(i+all.length)%all.length;
+    large.src=all[active].src;large.alt=all[active].alt;
+    caption.textContent=all[active].alt;counter.textContent=(active+1)+' / '+all.length;
+    if(!dialog.open)dialog.showModal();
+  }
+  document.getElementById('gallery-close').onclick=()=>dialog.close();
+  document.getElementById('gallery-prev').onclick=()=>show(active-1);
+  document.getElementById('gallery-next').onclick=()=>show(active+1);
+  dialog.addEventListener('click',e=>{if(e.target===dialog)dialog.close()});
+  dialog.addEventListener('keydown',e=>{if(e.key==='ArrowLeft')show(active-1);if(e.key==='ArrowRight')show(active+1)});
+  let touchX;dialog.addEventListener('touchstart',e=>{touchX=e.changedTouches[0]?.screenX},{passive:true});
+  dialog.addEventListener('touchend',e=>{if(typeof touchX!=='number')return;const dx=e.changedTouches[0].screenX-touchX;if(Math.abs(dx)>55)show(active+(dx<0?1:-1));touchX=undefined},{passive:true});
+  async function load(next=false){
+    if(busy)return;busy=true;status.hidden=false;
+    const controller=new AbortController();const timeout=setTimeout(()=>controller.abort(),9000);
+    try{
+      const response=await fetch(apiBase+'/gallery?limit=24&offset='+(next?page*24:0),{signal:controller.signal,credentials:'omit',cache:'no-cache'});
+      if(!response.ok)throw new Error('gallery HTTP '+response.status);
+      const data=await response.json();
+      if(!Array.isArray(data.items))throw new Error('invalid gallery payload');
+      const photos=data.items.map(validImage).filter(Boolean);
+      if(!next){grid.replaceChildren();all=[];page=0}
+      for(const item of photos){
+        const li=document.createElement('li');li.className='tile';
+        const button=document.createElement('button');button.type='button';button.className='photo';
+        const img=document.createElement('img');img.src=item.src;img.alt=item.alt;img.loading='lazy';img.decoding='async';img.width=450;img.height=600;
+        button.append(img);li.append(button);grid.append(li);all.push(item);
+      }
+      page++;hasMore=Boolean(data.has_more)&&photos.length>0;bindPhotos();
+    }catch(e){if(!next)bindPhotos();}finally{clearTimeout(timeout);busy=false;status.hidden=true}
+  }
+  more.addEventListener('click',()=>load(true));bindPhotos();load();
+</script>
