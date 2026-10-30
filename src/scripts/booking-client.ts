@@ -76,7 +76,7 @@ export const durationLabel = (min: number) => {
   return hh ? `${hh} h${mm ? ` ${mm} min` : ''}` : `${mm} min`;
 };
 
-export interface Slot { time: string; staff_id: number }
+export interface Slot { time: string; staff_id: number; available?: boolean }
 
 /** Riepilogo di un giorno: chiuso, tutto occupato o quanti orari liberi. */
 export interface DaySummary { date: string; open: boolean; free: number; first: string | null }
@@ -107,14 +107,28 @@ export function slotPicker(opts: {
     try {
       const { slots } = await opts.load(date);
       if (mine !== req) return;
-      if (!slots.length) {
+      const freeSlots = (Array.isArray(slots) ? slots : []).filter(s => s && s.available !== false && /^([01]\\d|2[0-3]):[0-5]\\d$/.test(s.time));
+      if (!freeSlots.length) {
         slotsBox.replaceChildren(h('p', { class: 'muted' }, 'Nessun orario libero in questo giorno. Prova un altro giorno.'));
         return;
       }
       const grid = h('div', { class: 'grid-slots', role: 'group', 'aria-label': `Orari di ${dayLabel(date)}` });
-      for (const s of slots) {
+      for (const s of freeSlots) {
         const b = h('button', { type: 'button', class: 'slot' }, s.time);
-        b.addEventListener('click', () => opts.onPick(date, s.time));
+        b.addEventListener('click', async () => {
+          if (b.disabled) return;
+          b.disabled = true;
+          try {
+            // Evita slot obsoleti se un'altra cliente ha prenotato nel frattempo.
+            const updated = await opts.load(date);
+            if (mine !== req) return;
+            const stillFree = updated.slots?.some(slot => slot.time === s.time && slot.available !== false);
+            if (!stillFree) { await pickDay(date, btn); return; }
+            opts.onPick(date, s.time);
+          } catch (error) {
+            slotsBox.replaceChildren(h('p', { class: 'err', role: 'alert' }, 'Non riesco a verificare l’orario. Riprova.'));
+          } finally { b.disabled = false; }
+        });
         grid.append(b);
       }
       slotsBox.replaceChildren(grid);
