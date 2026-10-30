@@ -4,6 +4,8 @@ on:
     branches: [main]
     paths:
       - 'src/pages/index.astro'
+      - 'src/pages/galleria/**'
+      - 'src/components/Header.astro'
       - 'src/data/faq.ts'
       - 'src/pages/recensione.astro'
       - 'src/pages/lascia-una-recensione.astro'
@@ -15,6 +17,8 @@ on:
   pull_request:
     paths:
       - 'src/pages/index.astro'
+      - 'src/pages/galleria/**'
+      - 'src/components/Header.astro'
       - 'src/data/faq.ts'
       - 'src/pages/recensione.astro'
       - 'src/pages/lascia-una-recensione.astro'
