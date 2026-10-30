@@ -223,7 +223,12 @@ const wa = waLink(WA_HELLO);
       const cancel = h('button', { type: 'button', class: 'linkbtn' }, 'Annulla');
       const field = (label: string, input: HTMLInputElement) => h('label', { class: 'f' }, label, input);
       const editForm = h('form', { hidden: true }, field('Nome', first), field('Cognome', last), field('Cellulare (facoltativo)', phone), field('Email', email), h('div', { class: 'actions' }, save, cancel));
-      const verifyForm = h('form', {}, h('label', { class: 'f' }, 'Codice di 6 cifre', code), ok);
+      const pasteOtp = h('button', { type:'button', class:'btn btn-ghost' }, '📋 Incolla codice');
+      pasteOtp.addEventListener('click', async () => {
+        try { code.value = (await navigator.clipboard.readText()).replace(/[^0-9]/g,'').slice(0,6); code.focus(); }
+        catch { feedback.textContent = 'Per incollare il codice, usa il menu Incolla del telefono o del browser.'; }
+      });
+      const verifyForm = h('form', {}, h('label', { class: 'f' }, 'Codice di 6 cifre', code), h('div', { class:'actions' }, ok, pasteOtp));
       const again = h('button', { type: 'button', class: 'btn btn-ghost', hidden: true }, 'Scegli un nuovo orario');
       let retryAt = Date.now() + 60_000;
       let busy = false;
