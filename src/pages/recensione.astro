@@ -9,6 +9,35 @@ import { BOOKING_API } from '../data/booking';
     <h1 class="title-lg">La tua <em>esperienza</em></h1>
     <p class="review-lead">La tua opinione è preziosa. Come ti sei trovata da Jenny Nails Studio? ✨</p>
     <div class="card panel" id="review-view" aria-live="polite"><p>Caricamento…</p></div>
+    <div class="card panel review-email" id="review-email" hidden>
+      <h2>💌 Resta in contatto con Jenny</h2>
+      <p class="muted">Aggiungi la tua email per conferme e comunicazioni sui tuoi appuntamenti.</p>
+      <form id="review-email-form" class="review-form">
+        <label class="f">Indirizzo email
+          <input id="review-email-address" type="email" autocomplete="email" required maxlength="190" placeholder="nome@esempio.it" />
+        </label>
+        <label class="review-email-check">
+          <input id="review-email-privacy" type="checkbox" required />
+          <span>Ho letto l’<a href="/privacy/" target="_blank" rel="noopener">informativa privacy</a> sul trattamento dei dati per aggiornare i miei recapiti.</span>
+        </label>
+        <label class="review-email-check">
+          <input id="review-email-marketing" type="checkbox" />
+          <span>✨ Voglio ricevere novità, nuove nail art, promozioni e offerte riservate via email. Consenso facoltativo, revocabile in seguito.</span>
+        </label>
+        <button type="submit" class="btn btn-primary">Invia codice di verifica</button>
+      </form>
+      <form id="review-email-verify" class="review-form" hidden>
+        <label class="f">Codice ricevuto via email
+          <input id="review-email-code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" minlength="6" maxlength="6" required />
+        </label>
+        <div class="actions">
+          <button class="btn btn-primary" type="submit">Verifica e salva email</button>
+          <button class="btn btn-ghost" id="review-email-paste" type="button">📋 Incolla codice</button>
+          <button class="btn btn-ghost" id="review-email-edit" type="button">Correggi email / reinvia codice</button>
+        </div>
+      </form>
+      <p id="review-email-status" class="muted" role="status" aria-live="polite"></p>
+    </div>
   </section>
 </Base>
 <script>
@@ -17,12 +46,75 @@ import { BOOKING_API } from '../data/booking';
   const view = document.getElementById('review-view')!;
   const token = location.hash.slice(1);
   const base = root.dataset.api!;
+  const emailBox = document.getElementById('review-email')!;
+  const emailForm = document.getElementById('review-email-form') as HTMLFormElement;
+  const verifyForm = document.getElementById('review-email-verify') as HTMLFormElement;
+  const emailStatus = document.getElementById('review-email-status')!;
+  const codeInput = document.getElementById('review-email-code') as HTMLInputElement;
+  let emailBusy = false;
+  function emailFailure(error: unknown) {
+    if (error instanceof ApiError && error.status === 409 && error.message.includes('già presente')) {
+      emailBox.hidden = true;
+    } else emailStatus.textContent = (error as Error).message;
+  }
+  emailForm.addEventListener('submit', async event => {
+    event.preventDefault();
+    if (emailBusy || !emailForm.reportValidity()) return;
+    emailBusy = true;
+    const button = emailForm.querySelector('button')!;
+    button.disabled = true;
+    emailStatus.textContent = 'Invio del codice in corso…';
+    try {
+      await api(base, '/reviews/email/start', {
+        token, email: (document.getElementById('review-email-address') as HTMLInputElement).value,
+        privacy_accepted: (document.getElementById('review-email-privacy') as HTMLInputElement).checked,
+        marketing: (document.getElementById('review-email-marketing') as HTMLInputElement).checked,
+      });
+      emailForm.hidden = true; verifyForm.hidden = false; codeInput.value = '';
+      emailStatus.textContent = '💌 Codice inviato! Controlla la posta: è valido per 10 minuti.';
+      codeInput.focus();
+    } catch (error) { emailFailure(error); }
+    finally { emailBusy = false; button.disabled = false; }
+  });
+  verifyForm.addEventListener('submit', async event => {
+    event.preventDefault();
+    if (emailBusy || !verifyForm.reportValidity()) return;
+    emailBusy = true;
+    const button = verifyForm.querySelector('button')!;
+    button.disabled = true;
+    try {
+      await api(base, '/reviews/email/verify', { token, code: codeInput.value.trim() });
+      verifyForm.hidden = true;
+      emailStatus.textContent = '✅ Email verificata e salvata. Grazie di cuore! 💗';
+    } catch (error) {
+      // Restore completion if the response was lost after the server saved.
+      try {
+        const saved = await api<{ email_missing?: boolean }>(base, '/reviews/landing', { token });
+        if (saved.email_missing === false) {
+          verifyForm.hidden = true; emailForm.hidden = true;
+          emailStatus.textContent = '✅ La tua email è già salvata.';
+          return;
+        }
+      } catch { /* Preserve the original error. */ }
+      emailFailure(error);
+    } finally { emailBusy = false; button.disabled = false; }
+  });
+  document.getElementById('review-email-edit')!.addEventListener('click', () => {
+    if (emailBusy) return;
+    verifyForm.hidden = true; emailForm.hidden = false;
+    emailStatus.textContent = 'Controlla l’indirizzo e richiedi un nuovo codice. Attendi un minuto dall’ultimo invio.';
+  });
+  document.getElementById('review-email-paste')!.addEventListener('click', async () => {
+    try { codeInput.value = (await navigator.clipboard.readText()).replace(/\D/g, '').slice(0, 6); }
+    catch { emailStatus.textContent = 'Tieni premuto nel campo e incolla il codice ricevuto via email.'; }
+  });
   const starText = ['','Da migliorare','Non del tutto soddisfatta','Discreta','Molto positiva','Fantastica!'];
   async function start() {
     if (!/^[a-f0-9]{64}$/.test(token)) { view.textContent = 'Link non disponibile. Contatta il salone per una nuova richiesta.'; return; }
     try {
-      type ReviewState = { feedback_submitted: boolean; feedback_rating?: number | null; google_available?: boolean };
+      type ReviewState = { feedback_submitted: boolean; feedback_rating?: number | null; google_available?: boolean; email_missing?: boolean };
       const state = await api<ReviewState>(base, '/reviews/landing', { token });
+      emailBox.hidden = state.email_missing !== true;
       let googleAvailable = state.google_available !== false;
       const google = h('a', { class: 'btn btn-primary review-google', href: base + '/reviews/r/' + token, target: '_blank', rel: 'noopener noreferrer' }, '⭐ Scrivi una recensione su Google');
       const note = h('p', { class: 'small muted' }, 'La recensione Google è facoltativa e si scrive direttamente su Google. Puoi usarla con qualsiasi valutazione.');
@@ -102,6 +194,11 @@ import { BOOKING_API } from '../data/booking';
   :global(.jn-review) { padding-bottom:calc(48px + env(safe-area-inset-bottom,0px)); }
   :global(.jn-review .review-lead) { max-width:40rem;font-size:clamp(1.05rem,2.5vw,1.3rem);line-height:1.6;margin:0 0 1.2rem; }
   :global(.jn-review .review-form) { display:grid;gap:1rem; }
+  :global(.jn-review [hidden]) { display:none !important; }
+  :global(.jn-review .review-email) { margin-top:1rem; }
+  :global(.jn-review .review-email-check) { display:flex;align-items:flex-start;gap:.65rem;line-height:1.6; }
+  :global(.jn-review .review-email-check input) { flex:0 0 20px;width:20px;height:20px;margin-top:.25rem;accent-color:var(--malva); }
+  :global(.jn-review .review-email input:not([type="checkbox"])) { width:100%;min-width:0;box-sizing:border-box;font-size:max(1rem,16px); }
   :global(.jn-review .review-votes) { display:flex;flex-direction:row;flex-wrap:nowrap;align-items:center;justify-content:space-between;gap:clamp(2px,2vw,14px);border:0;padding:0;margin:0;min-width:0; }
   :global(.jn-review .review-votes legend) { font-size:clamp(1rem,2.5vw,1.2rem);font-weight:700;padding-bottom:1rem; }
   :global(.jn-review .review-star) { position:relative;display:grid;place-items:center;flex:1 1 0;min-width:0;min-height:52px;cursor:pointer;border-radius:14px;color:#c5b7b9; }
