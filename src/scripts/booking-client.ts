@@ -87,6 +87,7 @@ export interface DaySummary { date: string; open: boolean; free: number; first: 
  */
 export function slotPicker(opts: {
   days: number;
+  showBusy?: boolean;
   load: (date: string) => Promise<{ slots: Slot[] }>;
   loadDays?: (from: string, count: number) => Promise<{ days: DaySummary[] }>;
   onPick: (date: string, time: string) => void;
@@ -108,13 +109,14 @@ export function slotPicker(opts: {
       const { slots } = await opts.load(date);
       if (mine !== req) return;
       const freeSlots = (Array.isArray(slots) ? slots : []).filter(s => s && s.available !== false && /^([01]\d|2[0-3]):[0-5]\d$/.test(s.time));
-      if (!freeSlots.length) {
+      if (!visibleSlots.length) {
         slotsBox.replaceChildren(h('p', { class: 'muted' }, 'Nessun orario libero in questo giorno. Prova un altro giorno.'));
         return;
       }
       const grid = h('div', { class: 'grid-slots', role: 'group', 'aria-label': `Orari di ${dayLabel(date)}` });
-      for (const s of freeSlots) {
-        const b = h('button', { type: 'button', class: 'slot' }, s.time);
+      for (const s of visibleSlots) {
+        const occupied = s.available === false;
+        const b = h('button', { type: 'button', class: occupied ? 'slot is-busy' : 'slot', ...(occupied ? { disabled: true, 'aria-label': s.time + ', occupato', title: 'Occupato' } : {}) }, s.time, occupied ? h('small', { class: 'slot-status' }, 'Occupato') : null);
         b.addEventListener('click', async () => {
           if (b.disabled) return;
           b.disabled = true;
@@ -169,12 +171,12 @@ export function slotPicker(opts: {
         if (!b) continue;
         const tag = !d.open ? 'Chiuso' : !d.free ? 'Completo' : d.free <= 3 ? 'Ultimi posti' : '';
         if (tag) b.append(h('span', { class: 'tag' }, tag));
-        if (!d.open || !d.free) {
+        if (!d.open || (!d.free && !opts.showBusy)) {
           b.disabled = true;
           b.classList.add(d.open ? 'is-full' : 'is-closed');
           b.setAttribute('aria-label', `${dayLabel(d.date)}, ${tag.toLowerCase()}`);
         } else if (d.free <= 3) b.classList.add('is-few');
-        if (!picked && d.open && d.free) {
+        if (!picked && d.open && (d.free || opts.showBusy)) {
           picked = true;
           if (req === 0) void pickDay(d.date, b);
         }
