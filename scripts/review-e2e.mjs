@@ -113,6 +113,13 @@ try {
       assert.equal(await birthday.inputValue(),'20/09/1989','separators are inserted automatically');
       await birthday.fill('29/02/2000');
       assert.equal(await birthday.evaluate(el=>el.checkValidity()),true,'leap day is accepted');
+      await birthday.fill('');
+      await birthday.pressSequentially('20091989');
+      await birthday.press('End');
+      await birthday.press('Backspace');
+      assert.equal(await birthday.inputValue(),'20/09/198','year remains editable');
+      await birthday.press('9');
+      assert.equal(await birthday.inputValue(),'20/09/1989');
       await birthday.fill(scenario.birth);
       assert.equal(await birthday.inputValue(),'20/05/1990','ISO autofill is converted to Italian display');
     }
@@ -175,7 +182,14 @@ try {
   for(const width of [320,393,768,1280]) {
     const context=await browser.newContext({viewport:{width,height:900}});
     const page=await context.newPage();
+    await page.route('**/api/jenny/public/catalog',route=>route.fulfill({status:200,contentType:'application/json',headers:{'access-control-allow-origin':'*'},body:JSON.stringify({branding:{hero_url:'/api/jenny/public/media/'+ 'b'.repeat(24)+'.jpg',hero_alt:'Jenny'}})}));
+    await page.route('**/api/jenny/public/media/'+ 'b'.repeat(24)+'.jpg',route=>route.fulfill({status:200,contentType:'image/svg+xml',body:'<svg xmlns="http://www.w3.org/2000/svg" width="480" height="600"><rect width="480" height="600" fill="pink"/></svg>'}));
     await page.goto(base+'/',{waitUntil:'domcontentloaded'});
+    const hero=page.locator('.hero-art img[src*="'+ 'b'.repeat(24)+'"]');
+    await hero.waitFor();
+    const heroStyle=await hero.evaluate(el=>({fit:getComputedStyle(el).objectFit,width:el.getBoundingClientRect().width}));
+    assert.equal(heroStyle.fit,'cover','dynamic hero must retain responsive image styles');
+    assert.ok(heroStyle.width<=Math.min(width,480),'dynamic portrait must fit its frame');
     const guide=page.locator('#come-prenotare');
     assert.equal(await guide.locator('li').count(),3);
     const layout=await guide.evaluate(el=>{
