@@ -107,7 +107,7 @@ export function slotPicker(opts: {
     try {
       const { slots } = await opts.load(date);
       if (mine !== req) return;
-      const freeSlots = (Array.isArray(slots) ? slots : []).filter(s => s && s.available !== false && /^([01]\\d|2[0-3]):[0-5]\\d$/.test(s.time));
+      const freeSlots = (Array.isArray(slots) ? slots : []).filter(s => s && s.available !== false && /^([01]\d|2[0-3]):[0-5]\d$/.test(s.time));
       if (!freeSlots.length) {
         slotsBox.replaceChildren(h('p', { class: 'muted' }, 'Nessun orario libero in questo giorno. Prova un altro giorno.'));
         return;
