@@ -13,6 +13,35 @@ const wa = waLink('Ciao Jenny! Ti scrivo per il mio appuntamento.');
     <h1 class="title-lg">Il tuo <em>appuntamento</em></h1>
     <div id="manage" data-api={BOOKING_API} aria-live="polite"><p class="muted">Carico l’appuntamento…</p></div>
     <noscript><p class="err">Per vedere l’appuntamento serve JavaScript.</p></noscript>
+    <div id="email-update" class="card panel" style="margin-top:16px">
+      <h2>💌 Resta in contatto con Jenny</h2>
+      <p class="muted">Aggiungi o aggiorna la tua email per conferme e comunicazioni sui tuoi appuntamenti.</p>
+      <form id="email-change-form">
+        <label class="f">Indirizzo email
+          <input id="email-change-address" type="email" autocomplete="email" required maxlength="190" placeholder="nome@esempio.it" />
+        </label>
+        <label class="f" style="display:flex;align-items:flex-start;gap:8px">
+          <input id="email-change-privacy" type="checkbox" required />
+          <span>Ho letto l’<a href="/privacy/" target="_blank" rel="noopener">informativa privacy</a> sul trattamento dei dati per aggiornare i miei recapiti.</span>
+        </label>
+        <label class="f" style="display:flex;align-items:flex-start;gap:8px">
+          <input id="email-change-marketing" type="checkbox" />
+          <span>✨ Voglio ricevere novità, nuove nail art, promozioni e offerte riservate via email. Consenso facoltativo, revocabile in seguito.</span>
+        </label>
+        <button id="email-change-send" type="submit" class="btn btn-primary">Invia codice di verifica</button>
+      </form>
+      <form id="email-change-verify" hidden>
+        <label class="f">Codice ricevuto via email
+          <input id="email-change-code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" minlength="6" maxlength="6" required />
+        </label>
+        <div class="actions">
+          <button class="btn btn-primary" type="submit">Verifica e salva email</button>
+          <button class="btn btn-ghost" id="email-change-paste" type="button">📋 Incolla codice</button>
+        </div>
+      </form>
+      <p id="email-change-feedback" class="muted" role="status" aria-live="polite"></p>
+    </div>
+
 
     <div id="help" class="card panel" hidden>
       <h2>Serve aiuto?</h2>
@@ -45,6 +74,35 @@ const wa = waLink('Ciao Jenny! Ti scrivo per il mio appuntamento.');
   // Il token sta nel frammento (#…): il browser non lo manda al server del sito.
   const token = decodeURIComponent(location.hash.slice(1)).trim();
   addEventListener('hashchange', () => location.reload());
+
+
+  const emailForm=document.getElementById('email-change-form') as HTMLFormElement;
+  const emailVerify=document.getElementById('email-change-verify') as HTMLFormElement;
+  const emailFeedback=document.getElementById('email-change-feedback')!;
+  emailForm.addEventListener('submit',async event=>{
+    event.preventDefault();if(!emailForm.reportValidity())return;
+    const button=document.getElementById('email-change-send') as HTMLButtonElement;
+    button.disabled=true;emailFeedback.textContent='Invio del codice in corso…';
+    try{
+      await api(API,'/manage/email/start',{token,email:(document.getElementById('email-change-address') as HTMLInputElement).value,privacy_accepted:(document.getElementById('email-change-privacy') as HTMLInputElement).checked,marketing:(document.getElementById('email-change-marketing') as HTMLInputElement).checked});
+      emailFeedback.textContent='💌 Codice inviato. Controlla la posta e inseriscilo qui sotto.';
+      emailVerify.hidden=false;
+    }catch(e){emailFeedback.textContent=(e as Error).message;}finally{button.disabled=false;}
+  });
+  emailVerify.addEventListener('submit',async event=>{
+    event.preventDefault();if(!emailVerify.reportValidity())return;
+    const button=emailVerify.querySelector('button[type="submit"]') as HTMLButtonElement;
+    button.disabled=true;
+    try{
+      await api(API,'/manage/email/verify',{token,code:(document.getElementById('email-change-code') as HTMLInputElement).value.trim()});
+      emailFeedback.textContent='✅ Email verificata e salvata correttamente.';
+      emailVerify.hidden=true;emailForm.hidden=true;
+    }catch(e){emailFeedback.textContent=(e as Error).message;}finally{button.disabled=false;}
+  });
+  document.getElementById('email-change-paste')!.addEventListener('click',async()=>{
+    try{(document.getElementById('email-change-code') as HTMLInputElement).value=(await navigator.clipboard.readText()).replace(/\D/g,'').slice(0,6);}
+    catch{emailFeedback.textContent='Incolla il codice manualmente: il browser non consente di leggere gli appunti.';}
+  });
 
   if (!/^[A-Za-z0-9_-]{20,100}$/.test(token)) {
     box.replaceChildren(h('div', { class: 'card panel' }, h('h2', {}, 'Link non valido'),
