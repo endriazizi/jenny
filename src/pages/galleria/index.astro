@@ -29,7 +29,7 @@ import { BOOKING_API } from '../../data/booking';
     <button id="gallery-prev" class="arrow" type="button" aria-label="Foto precedente">‹</button>
     <img id="gallery-large" alt="" />
     <button id="gallery-next" class="arrow" type="button" aria-label="Foto successiva">›</button>
-    <p id="gallery-caption"></p>
+    <div class="viewer-social"><p id="gallery-caption"></p><button id="gallery-copy" type="button">📋 Copia caption</button><a id="gallery-share" target="_blank" rel="noopener noreferrer" href="#">🔗 Condividi</a></div>
   </dialog>
 </Base>
 <style>
@@ -48,7 +48,7 @@ import { BOOKING_API } from '../../data/booking';
 .viewer button{color:white;background:transparent;border:0;cursor:pointer;min-width:44px;min-height:44px;font-size:25px}
 .viewer img{grid-column:2;grid-row:2;width:100%;height:100%;max-height:100%;object-fit:contain}
 .viewer .arrow:first-of-type{grid-column:1;grid-row:2}.viewer .arrow:last-of-type{grid-column:3;grid-row:2}
-.viewer p{grid-column:1/-1;text-align:center;margin:10px 0;font-size:14px}
+.viewer-social{grid-column:1/-1;text-align:center;display:flex;gap:10px;justify-content:center;align-items:center;flex-wrap:wrap}.viewer-social p{flex-basis:100%;white-space:pre-wrap;margin:8px 0;font-size:14px;max-height:20vh;overflow-y:auto}.viewer-social button,.viewer-social a{font-size:14px;color:white;border:1px solid #a66e86;border-radius:12px;padding:8px 12px;text-decoration:none}.viewer-social button{background:transparent}
 @media(min-width:640px){.gallery{grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}}
 @media(min-width:1024px){.gallery{grid-template-columns:repeat(4,minmax(0,1fr))}}
 @media(prefers-reduced-motion:reduce){.polish{animation:none}.photo :global(img){transition:none}}
@@ -62,6 +62,8 @@ import { BOOKING_API } from '../../data/booking';
   const large = document.getElementById('gallery-large');
   const caption = document.getElementById('gallery-caption');
   const counter = document.getElementById('gallery-counter');
+  const share = document.getElementById('gallery-share');
+  const copy = document.getElementById('gallery-copy');
   let active=0, all=[], page=0, hasMore=false, busy=false;
   const local=Array.from(grid.querySelectorAll('img')).map(img=>({src:img.currentSrc||img.src,alt:img.alt}));
   all=local;
@@ -71,7 +73,7 @@ import { BOOKING_API } from '../../data/booking';
     if(typeof url!=='string')return null;
     let parsed;try{parsed=new URL(url,new URL(apiBase).origin)}catch{return null}
     if(parsed.protocol!=='https:' || parsed.origin!==new URL(apiBase).origin || !parsed.pathname.startsWith('/api/jenny/public/media/'))return null;
-    return {src:parsed.href,alt:typeof raw.alt==='string'?raw.alt:'Manicure Jenny Nails Studio'};
+    return {src:parsed.href,alt:typeof raw.alt==='string'?raw.alt:'Manicure Jenny Nails Studio',id:raw.id,caption:typeof raw.social_copy==='string'&&raw.social_copy?raw.social_copy:(raw.caption||raw.alt||'')};
   };
   function bindPhotos(){
     grid.querySelectorAll('button.photo').forEach((b,i)=>{b.onclick=()=>show(i)});
@@ -82,9 +84,13 @@ import { BOOKING_API } from '../../data/booking';
     if(!all.length)return;
     active=(i+all.length)%all.length;
     large.src=all[active].src;large.alt=all[active].alt;
-    caption.textContent=all[active].alt;counter.textContent=(active+1)+' / '+all.length;
+    caption.textContent=all[active].caption||all[active].alt;
+    share.href=Number.isSafeInteger(Number(all[active].id))&&Number(all[active].id)>0?apiBase+'/gallery/share/'+all[active].id:all[active].src;
+    copy.hidden=!all[active].caption;counter.textContent=(active+1)+' / '+all.length;
     if(!dialog.open)dialog.showModal();
   }
+  copy.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(all[active].caption||all[active].alt);copy.textContent='✅ Copiato';setTimeout(()=>copy.textContent='📋 Copia caption',1800)}catch{copy.textContent='Seleziona il testo per copiarlo'}});
+  const requestedPhoto=new URLSearchParams(location.search).get('foto');
   document.getElementById('gallery-close').onclick=()=>dialog.close();
   document.getElementById('gallery-prev').onclick=()=>show(active-1);
   document.getElementById('gallery-next').onclick=()=>show(active+1);
@@ -109,6 +115,7 @@ import { BOOKING_API } from '../../data/booking';
         button.append(img);li.append(button);grid.append(li);all.push(item);
       }
       page++;hasMore=Boolean(data.has_more)&&photos.length>0;bindPhotos();
+      if(requestedPhoto&&!dialog.open){const position=all.findIndex(p=>String(p.id)===requestedPhoto);if(position>=0)show(position)}
     }catch(e){if(!next)bindPhotos();}finally{clearTimeout(timeout);busy=false;status.hidden=true}
   }
   more.addEventListener('click',()=>load(true));bindPhotos();load();
