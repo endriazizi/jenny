@@ -43,7 +43,7 @@ const wa = waLink(WA_HELLO);
   interface Service { id: number; category_id: number | null; name: string; description: string | null; price_cents: number | null; price_max_cents?: number | null; duration_min: number }
   interface Catalog {
     salon: { name: string; phone: string | null };
-    rules: { max_advance_days: number; customer_change_limit_h: number; auto_confirm: boolean; privacy_version: string; whatsapp_available: boolean; public_show_price?: boolean; public_show_duration?: boolean; public_show_busy_slots?: boolean };
+    rules: { max_advance_days: number; customer_change_limit_h: number; auto_confirm: boolean; calendar_invites_v2_enabled?: boolean; privacy_version: string; whatsapp_available: boolean; public_show_price?: boolean; public_show_duration?: boolean; public_show_busy_slots?: boolean };
     categories: { id: number; name: string }[];
     services: Service[];
   }
@@ -335,6 +335,47 @@ const wa = waLink(WA_HELLO);
       const copy = h('button', { type: 'button', class: 'btn btn-ghost' }, 'Copia il link');
       copy.addEventListener('click', () => navigator.clipboard?.writeText(url).then(() => (copy.textContent = 'Copiato')));
       app.querySelectorAll('.steps li').forEach((li) => li.classList.add('done'));
+      // Public calendar drafts must never expose the private manage token to Google or third parties.
+      // The backend supplies Jenny's wall-clock time in Europe/Rome, not the visitor's timezone.
+      const localStart = b.starts_at.slice(0, 19).replace(' ', 'T');
+      const localEnd = new Date(Date.parse(localStart + 'Z') + b.items.reduce((n, item) => n + item.duration_min, 0) * 60_000)
+        .toISOString().slice(0, 19);
+      const compact = (s: string) => s.replace(/[-:]/g, '');
+      const calendarAction = !pending && cat.rules.calendar_invites_v2_enabled
+        ? h('div', { class: 'card panel' },
+            h('h3', {}, 'Non dimenticare il tuo appuntamento 💗'),
+            h('p', { class: 'muted small' }, 'Salva il tuo appuntamento nel calendario. La conferma di salvataggio dipende dalla tua app.'),
+            h('div', { class: 'actions' },
+              h('a', {
+                class: 'btn btn-primary', target: '_blank', rel: 'noopener noreferrer',
+                href: 'https://calendar.google.com/calendar/render?' + new URLSearchParams({
+                  action: 'TEMPLATE', text: 'Appuntamento · Jenny Nails Studio',
+                  dates: compact(localStart) + '/' + compact(localEnd),
+                  ctz: 'Europe/Rome', details: 'Appuntamento presso Jenny Nails Studio.',
+                }).toString(),
+              }, 'Google Calendar'),
+              (() => {
+                const btn = h('button', { type: 'button', class: 'btn btn-ghost' }, 'Apple / Outlook (.ics)');
+                btn.addEventListener('click', () => {
+                  // Local TZID with server-issued UID / update semantics is required for real invites.
+                  // A standalone draft provides manual import without exposing private booking information.
+                  const ics = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Jenny Nails Studio//Calendar V2//IT',
+                    'BEGIN:VEVENT','UID:' + crypto.randomUUID() + '@jenny.milloshi.it',
+                    'DTSTAMP:' + new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, ''),
+                    'DTSTART;TZID=Europe/Rome:' + compact(localStart),
+                    'DTEND;TZID=Europe/Rome:' + compact(localEnd),
+                    'SUMMARY:Appuntamento Jenny Nails Studio',
+                    'DESCRIPTION:Appuntamento presso Jenny Nails Studio.',
+                    'BEGIN:VALARM','ACTION:DISPLAY','TRIGGER:-P1D',
+                    'DESCRIPTION:Promemoria appuntamento','END:VALARM',
+                    'END:VEVENT','END:VCALENDAR',''].join('\r\n');
+                  const file = URL.createObjectURL(new Blob([ics], { type: 'text/calendar;charset=utf-8' }));
+                  const link = document.createElement('a'); link.href = file;
+                  link.download = 'jenny-appuntamento.ics'; link.click();
+                  setTimeout(() => URL.revokeObjectURL(file), 2000);
+                });
+                return btn;
+              })())) : null;
       view.replaceChildren(h('div', { class: 'card panel' },
         h('p', { class: 'ok' }, pending ? 'Richiesta inviata' : 'Appuntamento confermato'),
         h('h2', {}, whenLabel(b.starts_at)),
@@ -344,7 +385,7 @@ const wa = waLink(WA_HELLO);
           : 'Ti abbiamo mandato un’email di conferma. Ti ricordiamo l’appuntamento il giorno prima e un’ora prima.'),
         h('p', { class: 'small' }, `Per spostare o annullare usa il tuo link personale (fino a ${cat.rules.customer_change_limit_h} ore prima). È anche nell’email: non condividerlo.`),
         h('p', { class: 'manage-url' }, url),
-        h('div', { class: 'actions' }, h('a', { class: 'btn btn-primary', href: `/gestisci/#${state.token}` }, 'Apri il mio appuntamento'), copy)));
+        h('div', { class: 'actions' }, h('a', { class: 'btn btn-primary', href: `/gestisci/#${state.token}` }, 'Apri il mio appuntamento'), copy)), ...(calendarAction ? [calendarAction] : []));
       app.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   }
