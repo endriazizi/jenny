@@ -58,8 +58,8 @@ const wa = waLink('Ciao Jenny! Ti scrivo per il mio appuntamento.');
   import { api, h, slotPicker, whenLabel, euro, type Slot } from '../scripts/booking-client';
 
   interface PublicBooking {
-    status: string; starts_at: string; ends_at: string; public_show_price?: boolean; total_cents: number | null;
-    items: { name: string; price_cents: number | null; duration_min: number }[];
+    status: string; starts_at: string; ends_at: string; public_show_price?: boolean; total_cents: number | null; total_max_cents?: number | null;
+    items: { name: string; price_cents: number | null; price_max_cents?: number | null; duration_min: number }[];
     can_change: boolean; change_deadline: string;
     salon: { name: string; address: string | null; phone: string | null };
   }
@@ -130,7 +130,7 @@ const wa = waLink('Ciao Jenny! Ti scrivo per il mio appuntamento.');
       h('h2', {}, whenLabel(b.starts_at)),
       h('div', { class: 'recap' },
         h('ul', {}, ...b.items.map((i) => h('li', {}, i.name))),
-        b.public_show_price === true && b.total_cents !== null && h('span', { class: 'small' }, `Totale di listino: ${euro(b.total_cents)}`),
+        b.public_show_price === true && b.total_cents !== null && h('span', { class: 'small' }, `Totale di listino: ${euro(b.total_cents, b.total_max_cents)}`),
         b.salon.address && h('span', { class: 'small muted' }, `${b.salon.name}, ${b.salon.address}`)),
     );
     if (b.can_change) {
@@ -215,3 +215,4 @@ const wa = waLink('Ciao Jenny! Ti scrivo per il mio appuntamento.');
     box.replaceChildren(h('div', { class: 'card panel' }, h('h2', {}, 'Annullare l’appuntamento?'), h('p', {}, whenLabel(b.starts_at)), form));
   }
 </script>
+

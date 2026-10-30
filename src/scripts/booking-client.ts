@@ -67,7 +67,8 @@ export const dayLabel = (date: string, opts: Intl.DateTimeFormatOptions = { week
 /** "2026-11-03 15:30:00" → "martedì 3 novembre, ore 15:30" */
 export const whenLabel = (dt: string) => `${dayLabel(dt)}, ore ${dt.slice(11, 16)}`;
 
-export const euro = (cents: number | null | undefined) =>
+export const euro = (cents: number | null | undefined, maximum?: number | null): string =>
+  cents != null && maximum != null && maximum > cents ? `${euro(cents)} – ${euro(maximum)}` :
   cents === null || cents === undefined ? 'su richiesta' : new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(cents / 100);
 
 export const durationLabel = (min: number) => {
@@ -189,3 +190,4 @@ export function slotPicker(opts: {
   void markDays();
   return root;
 }
+

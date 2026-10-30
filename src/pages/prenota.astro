@@ -40,7 +40,7 @@ const wa = waLink(WA_HELLO);
 <script>
   import { api, ApiError, h, slotPicker, whenLabel, euro, durationLabel, type Slot, type DaySummary } from '../scripts/booking-client';
 
-  interface Service { id: number; category_id: number | null; name: string; description: string | null; price_cents: number | null; duration_min: number }
+  interface Service { id: number; category_id: number | null; name: string; description: string | null; price_cents: number | null; price_max_cents?: number | null; duration_min: number }
   interface Catalog {
     salon: { name: string; phone: string | null };
     rules: { max_advance_days: number; customer_change_limit_h: number; auto_confirm: boolean; privacy_version: string; whatsapp_available: boolean; public_show_price?: boolean; public_show_duration?: boolean; public_show_busy_slots?: boolean };
@@ -48,7 +48,7 @@ const wa = waLink(WA_HELLO);
     services: Service[];
   }
   interface Customer { first_name: string; last_name: string; email: string; phone: string | null }
-  interface PublicBooking { status: string; starts_at: string; items: { name: string; price_cents: number | null; duration_min: number }[]; total_cents: number | null }
+  interface PublicBooking { status: string; starts_at: string; items: { name: string; price_cents: number | null; price_max_cents?: number | null; duration_min: number }[]; total_cents: number | null; total_max_cents?: number | null }
 
   const app = document.getElementById('app');
   if (app) start(app);
@@ -78,6 +78,7 @@ const wa = waLink(WA_HELLO);
       const priced = list.every((s) => s.price_cents !== null);
       return {
         min: list.reduce((a, s) => a + s.duration_min, 0),
+        priceMax: priced ? list.reduce((a, s) => a + (s.price_max_cents ?? s.price_cents ?? 0), 0) : null,
         price: priced ? list.reduce((a, s) => a + (s.price_cents || 0), 0) : null,
       };
     };
@@ -109,7 +110,7 @@ const wa = waLink(WA_HELLO);
       const refresh = () => {
         const t = totals();
         next.disabled = !state.selected.size;
-        sumText.textContent = state.selected.size ? [cat.rules.public_show_duration ? durationLabel(t.min) : '', cat.rules.public_show_price ? euro(t.price) : ''].filter(Boolean).join(' · ') || `${state.selected.size} trattament${state.selected.size === 1 ? 'o' : 'i'} selezionati` : 'Scegli almeno un trattamento';
+        sumText.textContent = state.selected.size ? [cat.rules.public_show_duration ? durationLabel(t.min) : '', cat.rules.public_show_price ? euro(t.price, t.priceMax) : ''].filter(Boolean).join(' · ') || `${state.selected.size} trattament${state.selected.size === 1 ? 'o' : 'i'} selezionati` : 'Scegli almeno un trattamento';
       };
       const blocks = groups.filter((x) => x.list.length).map(({ g, list }) =>
         h('div', { class: 'cat' }, h('h3', {}, g.name), ...list.map((s) => {
@@ -117,7 +118,7 @@ const wa = waLink(WA_HELLO);
           box.addEventListener('change', () => { box.checked ? state.selected.add(s.id) : state.selected.delete(s.id); refresh(); });
           return h('label', { class: 'svc' }, box,
             h('span', { class: 't' }, h('strong', {}, s.name), s.description && h('span', { class: 'm' }, s.description), cat.rules.public_show_duration && h('span', { class: 'm' }, durationLabel(s.duration_min))),
-            cat.rules.public_show_price && h('span', { class: 'p' }, euro(s.price_cents)));
+            cat.rules.public_show_price && h('span', { class: 'p' }, euro(s.price_cents, s.price_max_cents)));
         })));
       next.addEventListener('click', stepSlot);
       refresh();
@@ -337,7 +338,7 @@ const wa = waLink(WA_HELLO);
       view.replaceChildren(h('div', { class: 'card panel' },
         h('p', { class: 'ok' }, pending ? 'Richiesta inviata' : 'Appuntamento confermato'),
         h('h2', {}, whenLabel(b.starts_at)),
-        h('div', { class: 'recap' }, h('ul', {}, ...b.items.map((i) => h('li', {}, i.name))), cat.rules.public_show_price && h('span', { class: 'small' }, `Totale di listino: ${euro(b.total_cents)}`)),
+        h('div', { class: 'recap' }, h('ul', {}, ...b.items.map((i) => h('li', {}, i.name))), cat.rules.public_show_price && h('span', { class: 'small' }, `Totale di listino: ${euro(b.total_cents, b.total_max_cents)}`)),
         h('p', {}, pending
           ? 'Jenny conferma a breve: ti arriva un’email quando l’appuntamento è confermato.'
           : 'Ti abbiamo mandato un’email di conferma. Ti ricordiamo l’appuntamento il giorno prima e un’ora prima.'),
@@ -348,4 +349,5 @@ const wa = waLink(WA_HELLO);
     }
   }
 </script>
+
 
