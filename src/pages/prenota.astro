@@ -360,7 +360,9 @@ const wa = waLink(WA_HELLO);
                   // Local TZID with server-issued UID / update semantics is required for real invites.
                   // A standalone draft provides manual import without exposing private booking information.
                   const ics = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Jenny Nails Studio//Calendar V2//IT',
-                    'BEGIN:VEVENT','DTSTART;TZID=Europe/Rome:' + compact(localStart),
+                    'BEGIN:VEVENT','UID:' + crypto.randomUUID() + '@jenny.milloshi.it',
+                    'DTSTAMP:' + new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, ''),
+                    'DTSTART;TZID=Europe/Rome:' + compact(localStart),
                     'DTEND;TZID=Europe/Rome:' + compact(localEnd),
                     'SUMMARY:Appuntamento Jenny Nails Studio',
                     'DESCRIPTION:Appuntamento presso Jenny Nails Studio.',
