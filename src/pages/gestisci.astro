@@ -143,7 +143,7 @@ const wa = waLink('Ciao Jenny! Ti scrivo per il mio appuntamento.');
       panel.append(h('p', { class: 'muted small' }, 'Da qui non si può più modificare: per cambiamenti scrivici o chiamaci.'));
     }
     box.replaceChildren(panel);
-    api<{ id: number; status: string; requested_start?: string; counteroffer_start?: string } | null>(
+    api<{ id: number; status: string; requested_start?: string; counteroffer_start?: string; counteroffer_slots?: string[]; expires_at?: string; expired?: boolean } | null>(
       API, '/manage/pending-change', { token }).then((req) => {
       if (!req || !['pending', 'counteroffered'].includes(req.status)) return;
       const note = h('div', { class: 'card panel' },
@@ -152,21 +152,39 @@ const wa = waLink('Ciao Jenny! Ti scrivo per il mio appuntamento.');
           ? 'Il tuo appuntamento resta invariato fino alla risposta.'
           : 'Jenny propone: ' + whenLabel(req.counteroffer_start || '')));
       if (req.status === 'counteroffered') {
-        const yes = h('button', { class: 'btn btn-primary', type: 'button' }, 'Accetta il nuovo orario');
-        const no = h('button', { class: 'btn btn-ghost', type: 'button' }, 'Rifiuta');
+        const options = (req.counteroffer_slots?.length ? req.counteroffer_slots : (req.counteroffer_start ? [req.counteroffer_start] : []));
+        const choice = h('div', { class: 'actions', role:'group', 'aria-label':'Seleziona un orario' });
+        let selected = options.length === 1 ? options[0] : '';
+        const yes = h('button', { class: 'btn btn-primary', type: 'button' }, 'Conferma orario selezionato') as HTMLButtonElement;
+        const no = h('button', { class: 'btn btn-ghost', type: 'button' }, 'Rifiuta proposta') as HTMLButtonElement;
+        for (const option of options) {
+          const item = h('button', { type:'button', class:'btn btn-ghost', 'aria-pressed': String(selected === option) }, whenLabel(option)) as HTMLButtonElement;
+          item.addEventListener('click', () => {
+            selected = option;
+            choice.querySelectorAll('button').forEach(el => { el.classList.remove('btn-primary'); el.classList.add('btn-ghost'); el.setAttribute('aria-pressed','false'); });
+            item.classList.add('btn-primary'); item.classList.remove('btn-ghost'); item.setAttribute('aria-pressed','true');
+            yes.disabled = false;
+          });
+          choice.append(item);
+        }
+        yes.disabled = !selected || !!req.expired;
+        no.disabled = !!req.expired;
+        if (req.expires_at) note.append(h('p', { class:'muted small' }, 'Proposta valida fino a: ' + whenLabel(req.expires_at)));
+        if (req.expired) note.append(h('p', { class:'err' }, 'La proposta è scaduta: contatta Jenny per nuovi orari.'));
         const send = async (accept: boolean) => {
+          if (accept && !selected) return;
           yes.disabled = true; no.disabled = true;
           try {
-            await api(API, '/manage/respond-counteroffer', { token, request_id: req.id, accept });
+            await api(API, '/manage/respond-counteroffer', { token, request_id: req.id, accept, selected_start: accept ? selected : null });
             await load();
           } catch (err) {
-            yes.disabled = false; no.disabled = false;
+            yes.disabled = !selected; no.disabled = false;
             note.append(h('p', { class: 'err', role: 'alert' }, (err as Error).message));
           }
         };
-        yes.addEventListener('click', () => send(true));
-        no.addEventListener('click', () => send(false));
-        note.append(h('div', { class: 'actions' }, yes, no));
+        yes.addEventListener('click', () => void send(true));
+        no.addEventListener('click', () => void send(false));
+        note.append(h('p',{class:'muted small'},'Scegli uno degli orari proposti. Il tuo appuntamento originale rimane invariato finché non confermi.'),choice,h('div',{class:'actions'},yes,no));
       }
       box.append(note);
     }).catch(() => { /* La prenotazione resta visualizzabile. */ });
