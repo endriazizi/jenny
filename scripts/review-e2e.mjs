@@ -164,6 +164,20 @@ try {
     console.log('PASS public review '+scenario.rating+' stars');
   }
   for (const googleAvailable of [true, false]) {
+    const context=await browser.newContext(devices['iPhone 13']);const page=await context.newPage();let writes=0;
+    await mockGoogle(page);
+    await page.route('**/api/jenny/public/reviews/landing',route=>route.fulfill({status:200,contentType:'application/json',headers:{'access-control-allow-origin':'*'},body:JSON.stringify({feedback_submitted:true,feedback_rating:5,google_available:googleAvailable})}));
+    await page.route('**/api/jenny/public/reviews/feedback',route=>{writes++;return route.abort();});
+    await page.goto(base+'/recensione/#'+token,{waitUntil:'domcontentloaded'});
+    if(googleAvailable) {
+      await page.waitForURL('**/reviews/r/'+token);
+      await page.getByRole('heading',{name:'Google review destination'}).waitFor();
+    } else await page.getByRole('heading',{name:/Grazie per il tuo feedback/}).waitFor();
+    assert.equal(writes,0,'saved five-star feedback must never be resubmitted');
+    assert.equal(await page.getByRole('link',{name:/Scrivi una recensione su Google/}).count(),0,'no second-click Google screen');
+    await context.close();console.log('PASS saved five-star direct routing; Google configured='+googleAvailable);
+  }
+  for (const googleAvailable of [true, false]) {
     const context=await browser.newContext(devices['iPhone 13']);
     const page=await context.newPage();let saved=false;let writes=0;
     await mockGoogle(page);

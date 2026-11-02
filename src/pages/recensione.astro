@@ -116,15 +116,14 @@ import { BOOKING_API } from '../data/booking';
       const state = await api<ReviewState>(base, '/reviews/landing', { token });
       emailBox.hidden = state.email_missing !== true;
       let googleAvailable = state.google_available !== false;
-      const google = h('a', { class: 'btn btn-primary review-google', href: base + '/reviews/r/' + token, target: '_blank', rel: 'noopener noreferrer' }, '⭐ Scrivi una recensione su Google');
-      const note = h('p', { class: 'small muted' }, 'La recensione Google è facoltativa e si scrive direttamente su Google. Puoi usarla con qualsiasi valutazione.');
       const feedbackBox = h('div', { class: 'review-private' });
       function thankYou(rating: number) {
         const heading = h('h2', {}, 'Grazie per il tuo feedback! 💗');
         const saved = h('p', {}, 'La tua valutazione privata è stata registrata. Leggeremo con attenzione il tuo messaggio.');
         if (rating === 5 && googleAvailable) {
-          view.replaceChildren(heading, saved, h('h3', {}, 'Ti va di raccontarlo anche su Google? ✨'),
-            h('p', {}, 'Ci fa piacere sapere che ti sei trovata bene! Se ti va, condividi la tua esperienza su Google: aiuterai altre persone a conoscere Jenny Nails Studio. 💗'), google, note);
+          view.replaceChildren(h('p', { role: 'status' }, 'Apro Google…'));
+          // Replace this completion entry so Back cannot bounce through it again.
+          location.replace(base + '/reviews/r/' + token);
         } else {
           view.replaceChildren(heading, saved, h('p', {}, 'Grazie per il tempo che ci hai dedicato: la tua opinione ci aiuta a migliorare.'));
         }
@@ -181,7 +180,8 @@ import { BOOKING_API } from '../data/booking';
         saving = true; submit.disabled = true; status.textContent = '';
         radios.forEach(r => { r.disabled = true; });
         try {
-          const result = await api<{next_step?: string}>(base, '/reviews/feedback', { token, rating, text: openGoogle ? '' : text.value });
+          const result = await api<{next_step?: string; google_available?: boolean}>(base, '/reviews/feedback', { token, rating, text: openGoogle ? '' : text.value });
+          if (result.google_available !== undefined) googleAvailable = result.google_available;
           if (openGoogle && (result.next_step === 'google' || result.next_step === undefined)) {
             location.assign(base + '/reviews/r/' + token);
           } else thankYou(rating);
