@@ -1,0 +1,12 @@
+# Keep the review flow and service-worker updates fresh in browsers served by Plesk/Apache.
+<IfModule mod_setenvif.c>
+  SetEnvIf Request_URI "^/(lascia-una-recensione|recensione)(/|$)" jenny_review_page
+  <IfModule mod_headers.c>
+    Header always set Cache-Control "no-store, max-age=0" env=jenny_review_page
+  </IfModule>
+</IfModule>
+<IfModule mod_headers.c>
+  <Files "sw.js">
+    Header always set Cache-Control "no-cache, max-age=0, must-revalidate"
+  </Files>
+</IfModule>
