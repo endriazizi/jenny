@@ -25,7 +25,7 @@ import { BOOKING_API } from '../data/booking';
         </div>
         <div id="feedback-step" hidden>
           <h2 id="feedback-title" tabindex="-1">Come ti sei trovata? ✨</h2>
-          <p class="small muted">Voto e messaggio vengono salvati come feedback privato, visibile solo al salone.</p>
+          <p class="small muted">Con 5 stelle si apre direttamente Google. Da 1 a 4 stelle puoi inviare un messaggio privato a Jenny.</p>
           <fieldset>
             <legend>La tua valutazione</legend>
             <div class="stars">
@@ -33,9 +33,11 @@ import { BOOKING_API } from '../data/booking';
             </div>
           </fieldset>
           <p class="rating-label" id="public-rating-label" role="status">Seleziona da 1 a 5 stelle</p>
+          <div id="private-feedback" hidden>
           <label class="f">Un messaggio solo per noi (facoltativo)<textarea name="text" rows="4" maxlength="2000" placeholder="Cosa ti è piaciuto? C’è un dettaglio che possiamo migliorare? 💗"></textarea></label>
           <p class="small muted">Non inserire informazioni sensibili o dati di altre persone.</p>
           <button class="btn btn-primary" id="submit-review" type="submit">Invia il tuo feedback privato 💗</button>
+          </div>
           <button class="btn btn-ghost" id="back-contact" type="button">Torna ai tuoi dati</button>
         </div>
         <label class="trap" aria-hidden="true">Lascia vuoto<input name="website" tabindex="-1" autocomplete="off" /></label>
@@ -52,6 +54,7 @@ import { BOOKING_API } from '../data/booking';
   const feedback = document.getElementById('feedback-step')!;
   const status = document.getElementById('public-review-status')!;
   const submit = document.getElementById('submit-review') as HTMLButtonElement;
+  const privateFeedback = document.getElementById('private-feedback')!;
   const radios = [...form.querySelectorAll<HTMLInputElement>('input[name=rating]')];
   const birth = form.elements.namedItem('birth_date') as HTMLInputElement;
   const birthError = document.getElementById('birth-error')!;
@@ -105,36 +108,57 @@ import { BOOKING_API } from '../data/booking';
     field('first_name').focus();
   });
   radios.forEach(r => r.addEventListener('change', () => {
+    if (saving) return;
     const rating = Number(radios.find(r => r.checked)?.value || 0);
     radios.forEach((radio,i) => radio.parentElement?.classList.toggle('selected',i < rating));
     document.getElementById('public-rating-label')!.textContent = rating + '/5 · ' + ['','Da migliorare','Non del tutto soddisfatta','Discreta','Molto positiva','Fantastica!'][rating];
+    privateFeedback.hidden = rating === 5;
+    submit.textContent = 'Invia il tuo feedback privato 💗';
+    status.textContent = '';
+    if (rating === 5) void saveFeedback();
   }));
-  form.addEventListener('submit', async event => {
+  form.addEventListener('submit', event => {
     event.preventDefault();
+    void saveFeedback();
+  });
+  async function saveFeedback() {
     if (saving) return;
     if (feedback.hidden) { document.getElementById('continue-review')!.click(); return; }
     const rating = Number(radios.find(r => r.checked)?.value || 0);
     if (!rating) { status.textContent = 'Scegli le stelle prima di inviare. 💗'; radios[0].focus(); return; }
-    if (!validateBirth(true)) { feedback.hidden = true; contacts.hidden = false; birth.reportValidity(); return; }
-    saving = true; submit.disabled = true; status.textContent = 'Salvo il tuo messaggio…';
+    if (!validateBirth(true) || !form.checkValidity()) { feedback.hidden = true; contacts.hidden = false; form.reportValidity(); return; }
+    saving = true; submit.disabled = true;
+    radios.forEach(r => { r.disabled = true; });
+    status.textContent = rating === 5 ? 'Apro Google…' : 'Salvo il tuo messaggio…';
     try {
-      const result = await api<{saved: boolean; token: string}>(root.dataset.api!, '/reviews/public', {
+      const result = await api<{saved: boolean; token: string; next_step?: string; feedback_rating?: number; google_available?: boolean}>(root.dataset.api!, '/reviews/public', {
         first_name: field('first_name').value, last_name: field('last_name').value,
         phone: field('phone').value, birth_date: birthISO(),
         privacy_notice: field('privacy_notice').checked, marketing_consent: field('marketing_consent').checked,
-        rating, text: (form.elements.namedItem('text') as HTMLTextAreaElement).value,
+        rating, text: rating === 5 ? '' : (form.elements.namedItem('text') as HTMLTextAreaElement).value,
         website: field('website').value, submission_token: token
       });
       if (!result.saved || !/^[a-f0-9]{64}$/.test(result.token)) throw new Error('Risposta non disponibile. Riprova.');
-      location.replace('/recensione/#' + result.token);
+      const savedRating = result.feedback_rating ?? rating;
+      if (result.next_step === 'google' || (result.next_step === undefined && savedRating === 5)) {
+        location.assign(root.dataset.api! + '/reviews/r/' + result.token);
+      } else {
+        location.replace('/recensione/#' + result.token);
+      }
     } catch (e) {
       status.textContent = (e as Error).message;
       saving = false; submit.disabled = false;
+      radios.forEach(r => { r.disabled = false; });
+      // Keep a retry action available when the initial five-star save fails.
+      privateFeedback.hidden = false;
+      submit.textContent = rating === 5 ? 'Riprova ad aprire Google' : 'Invia il tuo feedback privato 💗';
     }
-  });
+  }
 </script>
 <style>
   .public-review { padding-bottom:calc(48px + env(safe-area-inset-bottom)); }
+  .public-review [hidden] { display:none !important; }
+  .public-review #private-feedback { display:grid;gap:16px; }
   .public-review .intro { font-size:clamp(1rem,2.5vw,1.2rem);line-height:1.7;margin-bottom:24px; }
   .public-review .contact-grid { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px; }
   .public-review .contact-grid > *, .public-review form, .public-review fieldset { min-width:0; }
