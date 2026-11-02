@@ -5,6 +5,7 @@
  */
 const CACHE = 'jenny-static-v1';
 const STATIC = /^\/(_astro\/|icons\/|favicon\.svg$|og\.png$)/;
+const REVIEW_PAGE = /^\/(lascia-una-recensione|recensione)(\/|$)/;
 
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', (event) => {
@@ -28,7 +29,9 @@ self.addEventListener('fetch', (event) => {
   if (url.origin !== self.location.origin) return;
 
   if (req.mode === 'navigate') {
-    event.respondWith(fetch(req).catch(() => new Response(OFFLINE, { headers: { 'Content-Type': 'text/html; charset=utf-8' } })));
+    // Network fetches can still reuse the browser HTTP cache unless explicitly bypassed.
+    const options = REVIEW_PAGE.test(url.pathname) ? { cache: 'no-store' } : undefined;
+    event.respondWith(fetch(req, options).catch(() => new Response(OFFLINE, { headers: { 'Content-Type': 'text/html; charset=utf-8' } })));
     return;
   }
   if (!STATIC.test(url.pathname)) return;

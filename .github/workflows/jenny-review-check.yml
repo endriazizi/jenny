@@ -10,6 +10,9 @@ on:
       - 'src/pages/recensione.astro'
       - 'src/pages/lascia-una-recensione.astro'
       - 'src/scripts/booking-client.ts'
+      - 'public/sw.js'
+      - 'public/.htaccess'
+      - 'scripts/service-worker.test.cjs'
       - 'scripts/review-e2e.mjs'
       - 'package.json'
       - 'package-lock.json'
@@ -23,6 +26,9 @@ on:
       - 'src/pages/recensione.astro'
       - 'src/pages/lascia-una-recensione.astro'
       - 'src/scripts/booking-client.ts'
+      - 'public/sw.js'
+      - 'public/.htaccess'
+      - 'scripts/service-worker.test.cjs'
       - 'package.json'
       - 'package-lock.json'
       - '.github/workflows/jenny-review-check.yml'
@@ -39,6 +45,7 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci
+      - run: node --test scripts/service-worker.test.cjs
       - run: npm run check
       - run: npm run build
       - name: Install browser test runtime
