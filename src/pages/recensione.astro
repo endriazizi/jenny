@@ -112,7 +112,7 @@ import { BOOKING_API } from '../data/booking';
   async function start() {
     if (!/^[a-f0-9]{64}$/.test(token)) { view.textContent = 'Link non disponibile. Contatta il salone per una nuova richiesta.'; return; }
     try {
-      type ReviewState = { feedback_submitted: boolean; feedback_rating?: number | null; google_available?: boolean; email_missing?: boolean };
+      type ReviewState = { feedback_submitted: boolean; feedback_rating?: number | null; google_available?: boolean; email_missing?: boolean; next_step?: string };
       const state = await api<ReviewState>(base, '/reviews/landing', { token });
       emailBox.hidden = state.email_missing !== true;
       let googleAvailable = state.google_available !== false;
@@ -148,27 +148,43 @@ import { BOOKING_API } from '../data/booking';
         h('label', { class: 'f review-comment' }, 'Un messaggio solo per noi (facoltativo)', text),
         h('p', { class: 'small muted' }, 'Il voto e il commento privati sono visibili soltanto allo staff. Non inserire dati sensibili.'),
         submit, status);
-      const form = h('form', { class: 'review-form' }, votes, description, feedbackBox);
+      const form = h('form', { class: 'review-form' }, votes, description,
+        h('p', { class: 'small muted' }, 'Con 5 stelle si apre direttamente Google. Da 1 a 4 stelle puoi inviare un messaggio privato a Jenny.'), feedbackBox);
+      let saving = false;
       function update() {
         const rating = Number(radios.find(r => r.checked)?.value || 0);
         radios.forEach((r, i) => r.parentElement?.classList.toggle('selected', !!rating && i < rating));
         description.textContent = rating ? rating + '/5 · ' + starText[rating] : 'Seleziona da 1 a 5 stelle';
         if (!rating) {
           feedbackBox.replaceChildren(h('p', { class: 'small muted' }, 'Scegli le stelle per continuare.'));
+        } else if (rating === 5 && googleAvailable) {
+          feedbackBox.replaceChildren(h('p', { role: 'status' }, 'Apro Google…'));
         } else {
+          submit.textContent = 'Invia feedback privato';
           feedbackBox.replaceChildren(h('h2', {}, 'Un messaggio solo per noi 💗'),
             h('p', {}, 'Condividi la tua esperienza con il salone. La valutazione e il commento restano privati.'), privateFields);
         }
       }
-      radios.forEach(r => r.addEventListener('change', update));
-      form.addEventListener('submit', async event => {
+      radios.forEach(r => r.addEventListener('change', () => {
+        if (saving) return;
+        update();
+        if (r.checked && r.value === '5' && googleAvailable) void saveFeedback(true);
+      }));
+      form.addEventListener('submit', event => {
         event.preventDefault();
+        void saveFeedback(Number(radios.find(r => r.checked)?.value) === 5 && googleAvailable);
+      });
+      async function saveFeedback(openGoogle = false) {
         const rating = Number(radios.find(r => r.checked)?.value || 0);
-        if (!rating || submit.disabled) { description.textContent = 'Seleziona le stelle prima di inviare.'; return; }
-        submit.disabled = true;
+        if (saving) return;
+        if (!rating) { description.textContent = 'Seleziona le stelle prima di inviare.'; return; }
+        saving = true; submit.disabled = true; status.textContent = '';
+        radios.forEach(r => { r.disabled = true; });
         try {
-          await api(base, '/reviews/feedback', { token, rating, text: text.value });
-          thankYou(rating);
+          const result = await api<{next_step?: string}>(base, '/reviews/feedback', { token, rating, text: openGoogle ? '' : text.value });
+          if (openGoogle && (result.next_step === 'google' || result.next_step === undefined)) {
+            location.assign(base + '/reviews/r/' + token);
+          } else thankYou(rating);
         } catch (error) {
           // A lost response or a retry after saving must restore the saved completion step.
           if (error instanceof ApiError && (error.status === 0 || error.status === 409 || error.status >= 500)) {
@@ -176,14 +192,22 @@ import { BOOKING_API } from '../data/booking';
               const saved = await api<ReviewState>(base, '/reviews/landing', { token });
               if (saved.feedback_submitted) {
                 googleAvailable = saved.google_available !== false;
-                thankYou(Number(saved.feedback_rating) || 0);
+                if (openGoogle && Number(saved.feedback_rating) === 5 && googleAvailable) {
+                  location.assign(base + '/reviews/r/' + token);
+                } else thankYou(Number(saved.feedback_rating) || 0);
                 return;
               }
             } catch (_) { /* Keep the original failure and allow another attempt. */ }
           }
-          status.textContent = (error as Error).message; submit.disabled = false;
+          saving = false; submit.disabled = false;
+          radios.forEach(r => { r.disabled = false; });
+          if (openGoogle) {
+            submit.textContent = 'Riprova ad aprire Google';
+            feedbackBox.replaceChildren(status, submit);
+          }
+          status.textContent = (error as Error).message;
         }
-      });
+      }
       view.replaceChildren(form);
       update();
     } catch (error) { view.textContent = (error as Error).message; }

@@ -3,17 +3,20 @@ import assert from 'node:assert/strict';
 
 const token='a'.repeat(64);
 const base=process.env.REVIEW_E2E_BASE||'http://127.0.0.1:4321';
+const googlePath='**/api/jenny/public/reviews/r/*';
+const mockGoogle=page=>page.route(googlePath,route=>route.fulfill({status:200,contentType:'text/html',body:'<h1>Google review destination</h1>'}));
 const scenarios=[
   {name:'iPhone narrow',device:devices['iPhone 13'],rating:1,threshold:3},
   {name:'Android mobile',device:devices['Pixel 7'],rating:3,threshold:3},
   {name:'desktop',device:{viewport:{width:1280,height:900}},rating:5,threshold:4},
 ];
-const browser=await chromium.launch({headless:true});
+const browser=await chromium.launch({headless:true,...(process.env.REVIEW_E2E_EXECUTABLE?{executablePath:process.env.REVIEW_E2E_EXECUTABLE}:{})});
 try {
   for(const scenario of scenarios){
     const context=await browser.newContext(scenario.device);
     const page=await context.newPage();
     const feedback=[];
+    await mockGoogle(page);
     await page.route('**/api/jenny/public/reviews/landing',route=>route.fulfill({
       status:200,contentType:'application/json',
       headers:{'access-control-allow-origin':'*'},
@@ -39,9 +42,15 @@ try {
     assert.equal(await page.getByRole('link',{name:/Scrivi una recensione su Google/}).count(),0,'initial step only shows stars');
     assert.equal(await page.getByRole('button',{name:'Invia feedback privato'}).count(),0,'private form absent initially');
     await stars.nth(scenario.rating-1).check({force:true});
+    if(scenario.rating===5) {
+      await page.waitForURL('**/reviews/r/'+token);
+      assert.equal(feedback.length,1);assert.equal(feedback[0].rating,5);assert.equal(feedback[0].text,'');
+      assert.equal(feedback[0].token,token);
+      await context.close();console.log('PASS '+scenario.name+' five-star immediate Google');continue;
+    }
     assert.equal(await page.locator('.review-rating-label').innerText(),scenario.rating+'/5 · '+['','Da migliorare','Non del tutto soddisfatta','Discreta','Molto positiva','Fantastica!'][scenario.rating]);
-    assert.equal(await page.getByRole('link',{name:/Scrivi una recensione su Google/}).count(),0,'save private feedback before offering Google');
-    assert.equal(await page.getByRole('button',{name:'Invia feedback privato'}).count(),1,'all ratings get a private form');
+    assert.equal(await page.getByRole('link',{name:/Scrivi una recensione su Google/}).count(),0,'internal feedback stays private');
+    assert.equal(await page.getByRole('button',{name:'Invia feedback privato'}).count(),1,'one through four stars show the private form');
     await page.locator('textarea').fill('La mia esperienza privata');
     const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>window.innerWidth+2);
     assert.equal(overflow,false,'no horizontal viewport overflow');
@@ -72,6 +81,7 @@ try {
     const context=await browser.newContext(scenario.device);
     const page=await context.newPage();
     const submissions=[];
+    await mockGoogle(page);
     await page.route('**/api/jenny/public/reviews/public',async route=>{
       const body=route.request().postDataJSON();submissions.push(body);
       await route.fulfill({status:200,contentType:'application/json',headers:{'access-control-allow-origin':'*'},
@@ -131,11 +141,13 @@ try {
     const positions=await page.locator('.star').evaluateAll(elements=>elements.map(el=>el.getBoundingClientRect().y));
     assert.ok(positions.every(y=>Math.abs(y-positions[0])<2),'public stars must be horizontal');
     await page.locator('input[name=rating]').nth(scenario.rating-1).check({force:true});
-    assert.equal(await page.locator('input[name=rating]:checked').inputValue(),String(scenario.rating));
     if(scenario.rating===5) {
-      const colors=await page.locator('.star').evaluateAll(elements=>elements.map(el=>getComputedStyle(el).backgroundColor));
-      assert.notEqual(colors[4],colors[3],'selected fifth star must have a distinct highlight');
+      await page.waitForURL('**/reviews/r/*');
+      assert.equal(submissions.length,1);assert.equal(submissions[0].rating,5);assert.equal(submissions[0].text,'');
+      assert.equal(submissions[0].birth_date,scenario.birth);assert.equal(submissions[0].marketing_consent,true);
+      await context.close();console.log('PASS public five-star immediate Google');continue;
     }
+    assert.equal(await page.locator('input[name=rating]:checked').inputValue(),String(scenario.rating));
     await page.locator('textarea[name=text]').fill('Un messaggio privato 💗');
     await page.locator('#submit-review').click();
     await page.getByRole('heading',{name:/Grazie per il tuo feedback/}).waitFor();
@@ -154,6 +166,7 @@ try {
   for (const googleAvailable of [true, false]) {
     const context=await browser.newContext(devices['iPhone 13']);
     const page=await context.newPage();let saved=false;let writes=0;
+    await mockGoogle(page);
     await page.route('**/api/jenny/public/reviews/landing',route=>route.fulfill({
       status:200,contentType:'application/json',headers:{'access-control-allow-origin':'*'},
       body:JSON.stringify({feedback_submitted:saved,feedback_rating:saved?5:null,google_available:googleAvailable})}));
@@ -162,10 +175,13 @@ try {
     });
     await page.goto(base+'/recensione/#'+token,{waitUntil:'domcontentloaded'});
     await page.locator('input[name=rating]').nth(4).check({force:true});
-    await page.getByRole('button',{name:'Invia feedback privato'}).click();
-    await page.getByRole('heading',{name:/Grazie per il tuo feedback/}).waitFor();
+    if(googleAvailable) await page.waitForURL('**/reviews/r/'+token);
+    else {
+      await page.getByRole('button',{name:'Invia feedback privato'}).click();
+      await page.getByRole('heading',{name:/Grazie per il tuo feedback/}).waitFor();
+    }
     assert.equal(writes,1,'lost response must not cause a duplicate feedback write');
-    assert.equal(await page.getByRole('link',{name:/Scrivi una recensione su Google/}).count(),googleAvailable?1:0,'no Google CTA without a valid configured destination');
+    assert.equal(await page.getByRole('link',{name:/Scrivi una recensione su Google/}).count(),0,'redirect is automatic when configured; absent otherwise');
     await context.close();
     console.log('PASS saved feedback recovery; Google configured='+googleAvailable);
   }
@@ -178,6 +194,21 @@ try {
     await page.getByText('Link non disponibile.',{exact:true}).waitFor();
     assert.equal(await page.locator('textarea,input[name=rating]').count(),0,'revoked link cannot accept feedback');
     await context.close();console.log('PASS revoked personal link');
+  }
+  {
+    const context=await browser.newContext(devices['iPhone 13']);const page=await context.newPage();let writes=0;
+    await mockGoogle(page);
+    await page.route('**/api/jenny/public/reviews/landing',route=>route.fulfill({status:200,contentType:'application/json',headers:{'access-control-allow-origin':'*'},body:JSON.stringify({feedback_submitted:false,google_available:true,email_missing:true})}));
+    await page.route('**/api/jenny/public/reviews/feedback',async route=>{
+      writes++;if(writes===1)return route.fulfill({status:503,contentType:'application/json',headers:{'access-control-allow-origin':'*'},body:'{"message":"Riprova"}'});
+      await new Promise(resolve=>setTimeout(resolve,100));
+      return route.fulfill({status:200,contentType:'application/json',headers:{'access-control-allow-origin':'*'},body:'{"saved":true,"next_step":"google"}'});
+    });
+    await page.goto(base+'/recensione/#'+token,{waitUntil:'domcontentloaded'});
+    await page.locator('input[name=rating]').nth(4).check({force:true});
+    await page.getByRole('button',{name:'Riprova ad aprire Google'}).click();
+    await page.waitForURL('**/reviews/r/'+token);assert.equal(writes,2);
+    await context.close();console.log('PASS personal retry without comment or mandatory email');
   }
   for(const width of [320,393,768,1280]) {
     const context=await browser.newContext({viewport:{width,height:900}});
