@@ -39,6 +39,7 @@ const wa = waLink(WA_HELLO);
 
 <script>
   import { api, ApiError, h, slotPicker, whenLabel, euro, durationLabel, type Slot, type DaySummary } from '../scripts/booking-client';
+  import { captureTraffic } from '../scripts/traffic';
 
   interface Service { id: number; category_id: number | null; name: string; description: string | null; price_cents: number | null; price_max_cents?: number | null; duration_min: number }
   interface Catalog {
@@ -51,6 +52,8 @@ const wa = waLink(WA_HELLO);
   interface PublicBooking { status: string; starts_at: string; items: { name: string; price_cents: number | null; price_max_cents?: number | null; duration_min: number }[]; total_cents: number | null; total_max_cents?: number | null }
 
   const app = document.getElementById('app');
+  // «Da dove arrivano»: legge ?r= / utm / provenienza, pulisce la barra, conta l'apertura.
+  const traffic = captureTraffic(app?.dataset.api || '');
   if (app) start(app);
 
   function start(app: HTMLElement) {
@@ -188,6 +191,7 @@ const wa = waLink(WA_HELLO);
             service_ids: [...state.selected], date: state.date, time: state.time, note: note.value,
             customer: { first_name: first.value, last_name: last.value, email: email.value, phone: phone.value },
             consents: { privacy_notice: true, whatsapp: waBox.checked, marketing: mkBox.checked, privacy_version: app.dataset.privacy },
+            ...(traffic ? { traffic } : {}),
           });
           state.customer = { first_name: first.value.trim(), last_name: last.value.trim(), email: email.value.trim().toLowerCase(), phone: phone.value.trim() || null };
           state.token = out.token;
