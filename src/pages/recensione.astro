@@ -210,7 +210,14 @@ import { BOOKING_API } from '../data/booking';
       }
       view.replaceChildren(form);
       update();
-    } catch (error) { view.textContent = (error as Error).message; }
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 404) {
+        emailBox.hidden = true;
+        view.replaceChildren(h('h2', {}, 'Questo link non è più disponibile'),
+          h('p', {}, 'La richiesta potrebbe essere stata rimossa o sostituita. Chiedi a Jenny un nuovo link personale.'),
+          h('a', { class: 'btn btn-ghost', href: '/' }, 'Torna al sito Jenny'));
+      } else view.textContent = (error as Error).message;
+    }
   }
   void start();
 </script>
@@ -244,4 +251,3 @@ import { BOOKING_API } from '../data/booking';
   @media (max-width:400px) { :global(.jn-review .panel) { padding:clamp(14px,4vw,24px); } }
   @media (prefers-reduced-motion:reduce) { :global(.jn-review .review-star span) { transition:none; } }
 </style>
-

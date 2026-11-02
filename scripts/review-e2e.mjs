@@ -205,7 +205,8 @@ try {
       status:404,contentType:'application/json',headers:{'access-control-allow-origin':'*'},
       body:JSON.stringify({error:'not_found',message:'Link non disponibile.'})}));
     await page.goto(base+'/recensione/#'+token,{waitUntil:'domcontentloaded'});
-    await page.getByText('Link non disponibile.',{exact:true}).waitFor();
+    await page.getByRole('heading',{name:'Questo link non è più disponibile'}).waitFor();
+    assert.equal(await page.getByRole('link',{name:/Scrivi una recensione su Google/}).count(),0,'removed requests must never open Google');
     assert.equal(await page.locator('textarea,input[name=rating]').count(),0,'revoked link cannot accept feedback');
     await context.close();console.log('PASS revoked personal link');
   }
@@ -251,4 +252,3 @@ try {
     await context.close();console.log('PASS compact booking guide '+width+'px');
   }
 } finally {await browser.close();}
-
