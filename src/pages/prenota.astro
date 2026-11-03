@@ -61,6 +61,36 @@ const wa = waLink(WA_HELLO);
     const view = document.getElementById('view')!;
     const state = { selected: new Set<number>(), date: '', time: '', token: '', expires: 0, customer: { first_name: '', last_name: '', email: '', phone: null } as Customer };
     let cat: Catalog;
+    // Draft per questa scheda browser; scade dopo 30 minuti. Non conserva OTP o consensi.
+    const draftKey = 'jenny-booking-draft-v1';
+    let noteDraft = '';
+    let privacyDraft = false, waDraft = false, marketingDraft = false;
+    const persistDraft = () => {
+      try { sessionStorage.setItem(draftKey, JSON.stringify({
+        at: Date.now(), selected: [...state.selected], date: state.date,
+        time: state.time, customer: state.customer, note: noteDraft,
+      })); } catch {}
+    };
+    try {
+      const raw = sessionStorage.getItem(draftKey);
+      if (raw) {
+        const d = JSON.parse(raw);
+        if (Date.now() - Number(d.at) < 30 * 60_000) {
+          state.selected = new Set((Array.isArray(d.selected) ? d.selected : []).filter(Number.isInteger));
+          state.date = typeof d.date === 'string' ? d.date : '';
+          state.time = typeof d.time === 'string' ? d.time : '';
+          if (d.customer && typeof d.customer === 'object') {
+            state.customer = {
+              first_name: String(d.customer.first_name || ''),
+              last_name: String(d.customer.last_name || ''),
+              email: String(d.customer.email || ''),
+              phone: d.customer.phone ? String(d.customer.phone) : null,
+            };
+          }
+          noteDraft = typeof d.note === 'string' ? d.note.slice(0, 500) : '';
+        } else sessionStorage.removeItem(draftKey);
+      }
+    } catch {}
 
     const setStep = (n: number) =>
       app.querySelectorAll<HTMLElement>('.steps li').forEach((li) => {
@@ -95,6 +125,7 @@ const wa = waLink(WA_HELLO);
     api<Catalog>(API, '/catalog')
       .then((c) => {
         cat = c;
+        state.selected = new Set([...state.selected].filter(id => c.services.some(s => s.id === id)));
         if (!c.services.length) return fallback('I trattamenti prenotabili online saranno disponibili a breve. Intanto scrivici o chiamaci.');
         const wanted = new URLSearchParams(location.search).get('t')?.toLowerCase();
         if (wanted) c.services.filter((s) => s.name.toLowerCase().startsWith(wanted)).slice(0, 1).forEach((s) => state.selected.add(s.id));
@@ -118,12 +149,12 @@ const wa = waLink(WA_HELLO);
       const blocks = groups.filter((x) => x.list.length).map(({ g, list }) =>
         h('div', { class: 'cat' }, h('h3', {}, g.name), ...list.map((s) => {
           const box = h('input', { type: 'checkbox', checked: state.selected.has(s.id) });
-          box.addEventListener('change', () => { box.checked ? state.selected.add(s.id) : state.selected.delete(s.id); refresh(); });
+          box.addEventListener('change', () => { box.checked ? state.selected.add(s.id) : state.selected.delete(s.id); persistDraft(); refresh(); });
           return h('label', { class: 'svc' }, box,
             h('span', { class: 't' }, h('strong', {}, s.name), s.description && h('span', { class: 'm' }, s.description), cat.rules.public_show_duration && h('span', { class: 'm' }, durationLabel(s.duration_min))),
             cat.rules.public_show_price && h('span', { class: 'p' }, euro(s.price_cents, s.price_max_cents)));
         })));
-      next.addEventListener('click', stepSlot);
+      next.addEventListener('click', () => { persistDraft(); stepSlot(); });
       refresh();
       show(1, h('div', { class: 'card panel' }, h('h2', {}, 'Cosa ti facciamo?'),
         h('p', { class: 'muted small' }, cat.rules.public_show_price ? 'Puoi sceglierne più di uno: li facciamo uno dopo l’altro. I prezzi sono di listino, eventuali extra si concordano in salone.' : 'Puoi sceglierne più di uno: li facciamo uno dopo l’altro.'),
@@ -138,7 +169,7 @@ const wa = waLink(WA_HELLO);
         showBusy: cat.rules.public_show_busy_slots !== false,
         load: (date) => api<{ slots: Slot[] }>(API, `/availability?date=${date}&services=${ids}`),
         loadDays: (from, count) => api<{ days: DaySummary[] }>(API, `/availability/days?from=${from}&days=${count}&services=${ids}`),
-        onPick: (date, time) => { state.date = date; state.time = time; stepDetails(); },
+        onPick: (date, time) => { state.date = date; state.time = time; persistDraft(); stepDetails(); },
       });
       const back = h('button', { type: 'button', class: 'linkbtn' }, '← Cambia trattamenti');
       back.addEventListener('click', stepServices);
@@ -158,13 +189,34 @@ const wa = waLink(WA_HELLO);
       last.value = state.customer.last_name;
       email.value = state.customer.email;
       phone.value = state.customer.phone || '';
+      note.value = noteDraft;
       const privacy = h('input', { type: 'checkbox', required: true });
       const waBox = h('input', { type: 'checkbox' });
       const mkBox = h('input', { type: 'checkbox' });
+      privacy.checked = privacyDraft;
+      waBox.checked = waDraft;
+      mkBox.checked = marketingDraft;
       const err = h('p', { class: 'err', role: 'alert' });
       const send = h('button', { type: 'submit', class: 'btn btn-primary' }, 'Mandami il codice');
       const privacyLink = h('a', { href: '/privacy/#prenotazione-online', target: '_blank' }, 'informativa privacy');
 
+      const saveFields = () => {
+        state.customer = {
+          first_name: first.value, last_name: last.value, email: email.value,
+          phone: phone.value.trim() || null,
+        };
+        noteDraft = note.value;
+        privacyDraft = privacy.checked;
+        waDraft = waBox.checked;
+        marketingDraft = mkBox.checked;
+        persistDraft();
+      };
+      for (const input of [first, last, email, phone, note, privacy, waBox, mkBox]) {
+        input.addEventListener('input', saveFields);
+        input.addEventListener('change', saveFields);
+      }
+      const privacyError = h('p', { class: 'err field-error', role: 'alert', hidden: true },
+        'Per proseguire, conferma di aver letto l’informativa privacy.');
       const form = h('form', { novalidate: true },
         h('div', { class: 'recap' }, h('strong', {}, whenLabel(`${state.date} ${state.time}:00`)), h('span', { class: 'muted small' }, chosen().map((s) => s.name).join(' + '))),
         h('div', { class: 'two' }, field('Nome', first), field('Cognome', last)),
@@ -173,19 +225,26 @@ const wa = waLink(WA_HELLO);
         field('Note per Jenny (facoltativo)', note),
         h('fieldset', {}, h('legend', {}, 'Privacy'),
           h('label', { class: 'check' }, privacy, h('span', {}, 'Ho letto l’', privacyLink, ' (obbligatorio per prenotare).')),
+          privacyError,
           cat.rules.whatsapp_available && h('label', { class: 'check' }, waBox, h('span', {}, 'Voglio ricevere conferma e promemoria anche su WhatsApp (facoltativo).')),
           h('label', { class: 'check' }, mkBox, h('span', {}, 'Voglio ricevere novità e offerte del salone (facoltativo).')),
           h('p', { class: 'muted small' }, 'I consensi facoltativi sono separati: puoi prenotare anche senza.')),
         err,
-        h('div', { class: 'actions' }, send, (() => { const b = h('button', { type: 'button', class: 'linkbtn' }, '← Cambia orario'); b.addEventListener('click', stepSlot); return b; })()),
+        h('div', { class: 'actions' }, send, (() => { const b = h('button', { type: 'button', class: 'linkbtn' }, '← Cambia orario'); b.addEventListener('click', () => { saveFields(); stepSlot(); }); return b; })()),
       );
+      privacy.addEventListener('change', () => { privacyError.hidden = privacy.checked; privacy.setAttribute('aria-invalid', privacy.checked ? 'false' : 'true'); });
       form.addEventListener('submit', async (ev) => {
         ev.preventDefault();
         err.textContent = '';
-        if (!first.value.trim() || !last.value.trim()) return void (err.textContent = 'Scrivi nome e cognome.');
-        if (!email.checkValidity() || !email.value) return void (err.textContent = 'Controlla l’email.');
-        if (!privacy.checked) return void (err.textContent = 'Per prenotare serve la presa visione dell’informativa privacy.');
+        saveFields();
+        if (!first.value.trim()) { err.textContent = 'Inserisci il nome (obbligatorio).'; first.focus(); return; }
+        if (!last.value.trim()) { err.textContent = 'Inserisci il cognome (obbligatorio).'; last.focus(); return; }
+        if (!email.checkValidity() || !email.value.trim()) { err.textContent = 'Inserisci un’email valida (obbligatoria).'; email.focus(); return; }
+        if (!privacy.checked) { err.textContent = 'Conferma la presa visione della privacy (obbligatoria).'; privacyError.hidden = false; privacy.setAttribute('aria-invalid', 'true'); privacy.scrollIntoView({ behavior: 'smooth', block: 'center' }); privacy.focus(); return; }
         send.disabled = true;
+        send.textContent = 'Invio codice in corso…';
+        err.classList.add('bk-progress');
+        err.textContent = 'Richiesta inviata al server. Stiamo preparando l’email con il codice…';
         try {
           const out = await api<{ token: string; expires_in_min: number }>(API, '/bookings', {
             service_ids: [...state.selected], date: state.date, time: state.time, note: note.value,
@@ -196,9 +255,12 @@ const wa = waLink(WA_HELLO);
           state.customer = { first_name: first.value.trim(), last_name: last.value.trim(), email: email.value.trim().toLowerCase(), phone: phone.value.trim() || null };
           state.token = out.token;
           state.expires = Date.now() + out.expires_in_min * 60_000;
+          try { sessionStorage.removeItem(draftKey); } catch {}
           stepCode(email.value);
         } catch (e) {
           send.disabled = false;
+          send.textContent = 'Mandami il codice';
+          err.classList.remove('bk-progress');
           if (e instanceof ApiError && e.code === 'slot_taken') {
             alert('Qualcuno ha appena preso questo orario. Scegline un altro.');
             return stepSlot();
@@ -334,6 +396,7 @@ const wa = waLink(WA_HELLO);
 
     // Fatto
     function stepDone(b: PublicBooking) {
+      try { sessionStorage.removeItem(draftKey); } catch {}
       const url = `${location.origin}/gestisci/#${state.token}`;
       const pending = b.status === 'pending';
       const copy = h('button', { type: 'button', class: 'btn btn-ghost' }, 'Copia il link');
