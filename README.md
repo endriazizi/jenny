@@ -23,6 +23,7 @@ npm run build && node scripts/check-data.mjs
 | Trattamenti, descrizioni, prezzi e durata | `src/data/trattamenti.ts` |
 | Domande frequenti | `src/data/faq.ts` |
 | Foto dei lavori (galleria e foto in alto nella home) | `src/assets/galleria/` + testi alternativi in `src/data/galleria.ts` |
+| Recensioni Google in home (quante, stelle minime, ordine, Place ID) | ENEA → Jenny → Impostazioni → «Recensioni Google sul sito»; componente `src/components/GoogleReviews.astro`, API `/api/jenny/public/google-reviews` |
 | Logo | `src/components/Wordmark.astro` (ora è un logo tipografico) e `public/favicon.svg` |
 | Immagine per WhatsApp/Facebook | `brand/og.html` → `node scripts/og.cjs` (usa Playwright) |
 

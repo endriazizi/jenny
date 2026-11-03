@@ -4,6 +4,7 @@ import { BOOKING_ONLINE } from '../data/booking';
 import Base from '../layouts/Base.astro';
 import Icon from '../components/Icon.astro';
 import Hours from '../components/Hours.astro';
+import GoogleReviews from '../components/GoogleReviews.astro';
 import { SITE, BOOK_HREF, WHATSAPP, waLink, WA_HELLO, fullAddress, directionsHref } from '../data/site';
 import { TRATTAMENTI } from '../data/trattamenti';
 import { FAQS } from '../data/faq';
@@ -144,6 +145,8 @@ const steps = BOOKING_ONLINE ? [
       </div>
     </div>
   </section>
+
+  <GoogleReviews />
 
   <section class="section section-alt" id="faq">
     <div class="wrap faqw">

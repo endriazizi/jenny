@@ -1,0 +1,179 @@
+---
+/**
+ * Recensioni Google in home, caricate dal browser (nessuna copia statica dei testi).
+ * API: GET {BOOKING_API}/google-reviews (ENEA) → media e totale reali e fino a 5 recensioni
+ * scelte nel gestionale (Impostazioni → «Recensioni Google sul sito»: quante, stelle minime, ordine).
+ * La sezione resta nascosta finché non arrivano dati veri: con il riquadro spento non compare.
+ * Nessuna foto profilo esterna: al posto della foto, l'iniziale del nome.
+ */
+import Icon from './Icon.astro';
+import { SITE, fullAddress } from '../data/site';
+const addr = fullAddress();
+const mapsUrl = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent([SITE.name, addr].filter(Boolean).join(', '));
+---
+<section class="section jgr" id="recensioni" data-jgr aria-labelledby="jgr-t" hidden>
+  <div class="wrap">
+    <div class="jgr-head">
+      <div class="head">
+        <p class="eyebrow">Dicono di noi</p>
+        <h2 id="jgr-t" class="title-lg">Le recensioni <em>su Google</em></h2>
+      </div>
+      <a class="jgr-score card" data-jgr-score data-jgr-all href={mapsUrl} rel="noopener noreferrer" target="_blank" hidden>
+        <span class="jgr-num" data-jgr-rating></span>
+        <span class="jgr-stars" data-jgr-avg-stars aria-hidden="true"></span>
+        <span class="jgr-count"><span data-jgr-count></span> recensioni su Google</span>
+      </a>
+    </div>
+    <ul class="jgr-list" data-jgr-list aria-label="Recensioni delle clienti" tabindex="0"></ul>
+    <div class="jgr-nav" data-jgr-nav hidden>
+      <button type="button" class="jgr-arrow" data-jgr-prev aria-label="Recensioni precedenti">←</button>
+      <button type="button" class="jgr-arrow" data-jgr-next aria-label="Recensioni successive">→</button>
+    </div>
+    <div class="jgr-foot">
+      <p class="jgr-note">Recensioni pubblicate su Google, mostrate con il nome dell'autrice o dell'autore. Media e numero sono quelli di Google.</p>
+      <div class="jgr-ctas">
+        <a class="btn btn-ghost" data-jgr-all href={mapsUrl} rel="noopener noreferrer" target="_blank">Leggi tutte su Google</a>
+        <a class="btn btn-primary" href="/lascia-una-recensione/"><Icon name="heart" size={18} />Lascia una recensione</a>
+      </div>
+    </div>
+  </div>
+  <template data-jgr-tpl>
+    <li class="jgr-card card">
+      <p class="jgr-cstars" data-stars></p>
+      <p class="jgr-text" data-text></p>
+      <a class="jgr-more" data-review rel="noopener noreferrer nofollow" target="_blank" hidden>Continua su Google →</a>
+      <div class="jgr-who">
+        <span class="jgr-ini" data-ini aria-hidden="true"></span>
+        <div><a data-author rel="noopener noreferrer nofollow" target="_blank"></a><span data-when></span></div>
+      </div>
+    </li>
+  </template>
+</section>
+
+<style>
+  .jgr { border-top: 1px solid var(--bordo); }
+  .jgr-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 20px 32px; flex-wrap: wrap; margin-bottom: 32px; }
+  .jgr-head .head { margin-bottom: 0; }
+  .jgr-score { display: grid; grid-template-columns: auto auto; grid-template-rows: auto auto; gap: 2px 14px; align-items: center; padding: 14px 22px; text-decoration: none; color: var(--inchiostro); }
+  .jgr-score:hover { border-color: var(--malva); color: var(--inchiostro); }
+  .jgr-num { grid-row: span 2; font-family: var(--serif); font-size: 46px; line-height: 1; }
+  .jgr-stars, .jgr-cstars { color: var(--malva); letter-spacing: 2px; }
+  .jgr-stars { font-size: 17px; }
+  .jgr-count { font-size: 14px; color: var(--testo-2); }
+  /* Schede affiancate da scorrere: 3 visibili su computer, una e un pezzo su telefono. */
+  .jgr-list { list-style: none; margin: 0; padding: 2px 0 8px; display: flex; gap: 16px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-behavior: smooth; scrollbar-width: none; }
+  .jgr-list::-webkit-scrollbar { display: none; }
+  .jgr-list:focus-visible { outline: 2px solid var(--malva); outline-offset: 4px; border-radius: 8px; }
+  .jgr-card { flex: 0 0 calc((100% - 32px) / 3); scroll-snap-align: start; padding: 22px; display: flex; flex-direction: column; gap: 12px; box-shadow: none; }
+  .jgr-nav { display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px; }
+  .jgr-arrow { width: 44px; height: 44px; border-radius: 50%; border: 1.5px solid var(--inchiostro); background: transparent; color: var(--inchiostro); font: inherit; font-size: 18px; cursor: pointer; }
+  .jgr-arrow:hover:not(:disabled) { background: var(--inchiostro); color: var(--avorio); }
+  .jgr-arrow:disabled { opacity: .3; cursor: default; }
+  @media (max-width: 1000px) { .jgr-card { flex-basis: calc((100% - 16px) / 2); } }
+  .jgr-cstars { font-size: 15px; }
+  .jgr-text { font-size: 16px; line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 7; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+  .jgr-more { font-size: 14px; font-weight: 700; }
+  .jgr-who { display: flex; align-items: center; gap: 10px; margin-top: auto; padding-top: 4px; }
+  .jgr-ini { width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; flex: none; background: var(--cipria); color: var(--malva); font-family: var(--serif); font-size: 18px; }
+  .jgr-who div { display: flex; flex-direction: column; min-width: 0; font-size: 14px; line-height: 1.35; }
+  .jgr-who a { color: var(--inchiostro); font-weight: 700; text-decoration: none; overflow-wrap: anywhere; }
+  .jgr-who a[href]:hover { text-decoration: underline; }
+  .jgr-who span { color: var(--testo-2); font-size: 13px; }
+  .jgr-foot { margin-top: 24px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px 24px; }
+  .jgr-note { font-size: 13px; color: var(--testo-2); max-width: 520px; }
+  .jgr-ctas { display: flex; flex-wrap: wrap; gap: 12px; }
+  @media (max-width: 760px) {
+    .jgr-head { margin-bottom: 24px; }
+    .jgr-score { padding: 12px 18px; }
+    .jgr-num { font-size: 38px; }
+    /* Telefono: schede affiancate da scorrere, come la galleria. */
+    .jgr-list { gap: 12px; margin-inline: -24px; padding: 2px 24px 8px; scroll-padding-inline: 24px; }
+    .jgr-card { flex-basis: 84%; }
+    .jgr-nav { display: none; }
+    .jgr-ctas { width: 100%; }
+    .jgr-ctas .btn { flex: 1 1 100%; }
+  }
+</style>
+
+<script>
+  import { BOOKING_API } from '../data/booking';
+  type Review = { rating?: unknown; text?: unknown; when?: unknown; publishTime?: unknown; author?: unknown; authorUri?: unknown; uri?: unknown };
+  const root = document.querySelector<HTMLElement>('[data-jgr]');
+  const safeHttps = (value: unknown): string | null => {
+    if (typeof value !== 'string') return null;
+    try {
+      const url = new URL(value);
+      return url.protocol === 'https:' && !url.username && !url.password ? url.href : null;
+    } catch { return null; }
+  };
+  const stars = (n: number) => '★'.repeat(n) + '☆'.repeat(5 - n);
+  const monthYear = (iso: unknown) => {
+    const t = typeof iso === 'string' ? Date.parse(iso) : NaN;
+    return Number.isFinite(t) ? new Intl.DateTimeFormat('it-IT', { month: 'long', year: 'numeric' }).format(t) : '';
+  };
+  if (root && 'fetch' in window) {
+    const ctl = new AbortController();
+    const timeout = setTimeout(() => ctl.abort(), 6000);
+    fetch(BOOKING_API + '/google-reviews', { signal: ctl.signal, credentials: 'omit' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (!d || !['google_places', 'google_business_profile'].includes(d.source)) return;
+        const mapsUri = safeHttps(d.mapsUri);
+        if (mapsUri) root.querySelectorAll<HTMLAnchorElement>('[data-jgr-all]').forEach((a) => { a.href = mapsUri; });
+        const minRating = Number.isInteger(d.minRating) && d.minRating >= 1 && d.minRating <= 5 ? d.minRating : 5;
+        let visible = false;
+        if (typeof d.rating === 'number' && d.rating >= 1 && d.rating <= 5 && Number.isSafeInteger(d.count) && d.count > 0) {
+          root.querySelector('[data-jgr-rating]')!.textContent = new Intl.NumberFormat('it-IT', { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(d.rating);
+          root.querySelector('[data-jgr-avg-stars]')!.textContent = stars(Math.round(d.rating));
+          root.querySelector('[data-jgr-count]')!.textContent = d.count.toLocaleString('it-IT');
+          root.querySelector<HTMLElement>('[data-jgr-score]')!.hidden = false;
+          visible = true;
+        }
+        const tpl = root.querySelector<HTMLTemplateElement>('[data-jgr-tpl]')!;
+        const list = root.querySelector('[data-jgr-list]')!;
+        const reviews = (Array.isArray(d.reviews) ? d.reviews as Review[] : [])
+          .filter((r) => r && Number.isInteger(r.rating) && (r.rating as number) >= minRating && (r.rating as number) <= 5 &&
+            typeof r.text === 'string' && r.text.trim().length >= 20)
+          .slice(0, 5);
+        for (const r of reviews) {
+          const li = tpl.content.firstElementChild!.cloneNode(true) as HTMLElement;
+          const rating = r.rating as number;
+          const s = li.querySelector('[data-stars]')!;
+          s.textContent = stars(rating);
+          s.setAttribute('aria-label', `${rating} stelle su 5`);
+          li.querySelector('[data-text]')!.textContent = (r.text as string).trim();
+          const name = typeof r.author === 'string' && r.author.trim() ? r.author.trim() : 'Cliente Google';
+          const a = li.querySelector<HTMLAnchorElement>('[data-author]')!;
+          a.textContent = name;
+          const authorUri = safeHttps(r.authorUri);
+          if (authorUri) a.href = authorUri;
+          li.querySelector('[data-ini]')!.textContent = name.charAt(0).toUpperCase();
+          li.querySelector('[data-when]')!.textContent = typeof r.when === 'string' && r.when ? r.when : monthYear(r.publishTime);
+          const reviewUri = safeHttps(r.uri);
+          if (reviewUri) { const more = li.querySelector<HTMLAnchorElement>('[data-review]')!; more.href = reviewUri; more.hidden = false; }
+          list.appendChild(li);
+        }
+        if (reviews.length) visible = true;
+        else (list as HTMLElement).hidden = true;
+        if (visible) root.hidden = false;
+        const nav = root.querySelector<HTMLElement>('[data-jgr-nav]')!;
+        const prev = root.querySelector<HTMLButtonElement>('[data-jgr-prev]')!;
+        const next = root.querySelector<HTMLButtonElement>('[data-jgr-next]')!;
+        const ul = list as HTMLElement;
+        const sync = () => {
+          const overflow = ul.scrollWidth > ul.clientWidth + 4;
+          nav.hidden = !overflow;
+          prev.disabled = ul.scrollLeft <= 4;
+          next.disabled = ul.scrollLeft + ul.clientWidth >= ul.scrollWidth - 4;
+        };
+        const step = () => (ul.querySelector('li')?.getBoundingClientRect().width || ul.clientWidth) + 16;
+        prev.addEventListener('click', () => ul.scrollBy({ left: -step() }));
+        next.addEventListener('click', () => ul.scrollBy({ left: step() }));
+        ul.addEventListener('scroll', sync, { passive: true });
+        window.addEventListener('resize', sync);
+        sync();
+      })
+      .catch(() => { /* niente dati: la sezione resta nascosta */ })
+      .finally(() => clearTimeout(timeout));
+  }
+</script>
