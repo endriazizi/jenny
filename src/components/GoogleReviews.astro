@@ -133,7 +133,7 @@ const mapsUrl = 'https://www.google.com/maps/search/?api=1&query=' + encodeURICo
         const list = root.querySelector('[data-jgr-list]')!;
         const reviews = (Array.isArray(d.reviews) ? d.reviews as Review[] : [])
           .filter((r) => r && Number.isInteger(r.rating) && (r.rating as number) >= minRating && (r.rating as number) <= 5 &&
-            typeof r.text === 'string' && r.text.trim().length >= 20)
+            typeof r.text === 'string' && r.text.trim().length > 0)
           .slice(0, 5);
         for (const r of reviews) {
           const li = tpl.content.firstElementChild!.cloneNode(true) as HTMLElement;
