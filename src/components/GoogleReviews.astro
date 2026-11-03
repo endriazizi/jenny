@@ -154,7 +154,11 @@ const mapsUrl = 'https://www.google.com/maps/search/?api=1&query=' + encodeURICo
           list.appendChild(li);
         }
         if (reviews.length) visible = true;
-        else (list as HTMLElement).hidden = true;
+        else {
+          (list as HTMLElement).hidden = true;
+          const note = root.querySelector<HTMLElement>('.jgr-note');
+          if (note) note.textContent = 'Le valutazioni Google sono disponibili, ma nessun commento ricevuto rispetta i filtri scelti. Leggi tutte le recensioni su Google Maps.';
+        }
         if (visible) root.hidden = false;
         const nav = root.querySelector<HTMLElement>('[data-jgr-nav]')!;
         const prev = root.querySelector<HTMLButtonElement>('[data-jgr-prev]')!;
