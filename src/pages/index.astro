@@ -49,17 +49,20 @@ const steps = BOOKING_ONLINE ? [
         )}
       </div>
       <div class="hero-art" id="jenny-dynamic-hero">
-        {hero ? (
-          <Image src={hero.src} alt={hero.alt} widths={[480, 720, 960]} sizes="(max-width: 899px) 100vw, 480px" loading="eager" class="hero-img" />
-        ) : (
-          <div class="swatches" aria-hidden="true">
-            <span style="--c:#f2c9d3;--r:-14deg;--y:22px" />
-            <span style="--c:#8e4a5e;--r:-6deg;--y:4px" />
-            <span style="--c:#e9cfc0;--r:2deg;--y:0px" />
-            <span style="--c:#c98f9d;--r:9deg;--y:10px" />
-            <span style="--c:#b08a4f;--r:17deg;--y:34px" />
-          </div>
-        )}
+        <img class="hero-img hero-img--remote" data-jenny-hero-image hidden alt="" loading="eager" decoding="async" />
+        <div data-jenny-hero-fallback>
+          {hero ? (
+            <Image src={hero.src} alt={hero.alt} widths={[480, 720, 960]} sizes="(max-width: 899px) 100vw, 480px" loading="eager" class="hero-img" />
+          ) : (
+            <div class="swatches" aria-hidden="true">
+              <span style="--c:#f2c9d3;--r:-14deg;--y:22px" />
+              <span style="--c:#8e4a5e;--r:-6deg;--y:4px" />
+              <span style="--c:#e9cfc0;--r:2deg;--y:0px" />
+              <span style="--c:#c98f9d;--r:9deg;--y:10px" />
+              <span style="--c:#b08a4f;--r:17deg;--y:34px" />
+            </div>
+          )}
+        </div>
       </div>
     </div>
   </section>
@@ -190,7 +193,10 @@ const steps = BOOKING_ONLINE ? [
   .ctas { display: flex; flex-wrap: wrap; gap: 12px; }
   .call { font-size: 15px; }
   .hero-art { overflow:hidden; border-radius:24px; min-width:0; max-width:480px; width:100%; margin-inline:auto; box-shadow:var(--ombra); }
+  .hero-art { position:relative; }
   .hero-art :global(.hero-img) { display:block; width:100%; height:auto; aspect-ratio: 4 / 5; object-fit:cover; object-position:center 38%; border-radius:inherit; }
+  .hero-art .hero-img--remote { position:absolute; inset:0; height:100%; z-index:1; }
+  .hero-art .hero-img--remote[hidden], .hero-art [data-jenny-hero-fallback][hidden] { display:none !important; }
 
   /* Cinque "unghie" di colore: decorazione finché non ci sono foto vere. */
   .swatches { position: relative; aspect-ratio: 1; max-width: 440px; margin-inline: auto; display: flex; align-items: center; justify-content: center; gap: 4%; }
