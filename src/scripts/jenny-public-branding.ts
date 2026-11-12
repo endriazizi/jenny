@@ -53,6 +53,14 @@ async function currentBranding(): Promise<PublicBrand | null> {
 export async function updateJennyBranding(): Promise<void> {
   const brand = await currentBranding();
   if (!brand) return;
+  const headerSrc = mediaUrl(brand.logo_url);
+  const headerImage = document.querySelector<HTMLImageElement>('[data-jenny-header-image]');
+  const headerFallback = document.querySelector<HTMLElement>('[data-jenny-header-fallback]');
+  if (headerSrc && headerImage) {
+    revealAfterLoad(headerImage, headerSrc, () => {
+      if (headerFallback) headerFallback.hidden = true;
+    });
+  }
   const footerSrc = mediaUrl(brand.footer_url) || mediaUrl(brand.logo_url);
   const footerLink = document.querySelector<HTMLElement>('[data-jenny-footer-photo]');
   const footerImage = document.querySelector<HTMLImageElement>('[data-jenny-footer-image]');
