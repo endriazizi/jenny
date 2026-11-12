@@ -15,7 +15,10 @@ const external = BOOK_HREF.startsWith('http');
 ---
 <header class="hdr">
   <div class="wrap hdr-in">
-    <a href="/" class="brand" aria-label="Jenny Nails Studio, home"><Wordmark /></a>
+    <a href="/" class="brand" aria-label="Jenny Nails Studio, home">
+      <span data-jenny-header-fallback><Wordmark /></span>
+      <img data-jenny-header-image class="brand-image" hidden alt="Jenny Nails Studio" width="125" height="40" decoding="async" />
+    </a>
     <details class="mnav">
       <summary aria-label="Apri il menu di navigazione">
         <span class="open"><Icon name="menu" /></span>
@@ -35,6 +38,7 @@ const external = BOOK_HREF.startsWith('http');
   .hdr { background: color-mix(in srgb, var(--avorio) 92%, transparent); backdrop-filter: blur(8px); border-bottom: 1px solid var(--bordo); position: sticky; top: 0; z-index: 20; }
   .hdr-in { display: flex; align-items: center; justify-content: space-between; gap: 16px; height: 68px; min-height: 68px; }
   .brand { text-decoration: none; display: flex; align-items: center; justify-content: flex-start; flex: 0 0 auto; max-width: 125px; width: auto; height: 48px; min-width: 0; overflow: hidden; }
+  .brand-image[hidden] { display:none !important; }
   .brand-image { display:block; max-width:100%; max-height:40px; width:auto; height:auto; object-fit:contain; border-radius:10px; }
   .mnav summary { display: none; }
   nav { display: flex; align-items: center; gap: 28px; font-weight: 600; font-size: 15.5px; }
