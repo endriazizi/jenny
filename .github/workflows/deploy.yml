@@ -36,6 +36,9 @@ jobs:
       - name: Installa dipendenze
         run: npm install --no-audit --no-fund
 
+      - name: Verifica foto Jenny hero, header e footer
+        run: node scripts/check-branding.mjs
+
       - name: Controllo tipi
         run: npx astro check
 
