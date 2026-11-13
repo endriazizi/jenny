@@ -15,7 +15,10 @@ assert.match(header, /data-jenny-header-fallback/, 'Missing text fallback for he
 assert.match(footer, /data-jenny-footer-image/, 'Missing Jenny footer photo target');
 assert.match(footer, /updateJennyBranding\(\)/, 'Runtime branding should run on static Astro pages');
 assert.match(runtime, /branding|hero_url|footer_url|logo_url/, 'Branding must use settings from public catalog');
-assert.match(runtime, /image\.onload/, 'Never reveal images until loaded');
+assert.match(runtime, /pending\.onload/, 'Never reveal images until loaded');
+assert.match(runtime, /savedBranding\(\)/, 'Branding should survive temporary catalog outages');
+assert.match(home, /hero-placeholder/, 'Hero should not flash an unrelated static photo');
+assert.doesNotMatch(home, /BOOKING_API \+ '\/catalog'/, 'Hero must not fetch catalog a second time');
 assert.match(runtime, /MEDIA_PATH/, 'Do not display untrusted image URLs');
 assert.match(backend, /PUBLIC_BOOKING_API/, 'Honor configured public API origin');
 console.log('Jenny public branding: header, hero, footer, fallback and runtime checks PASS');
