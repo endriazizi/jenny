@@ -28,31 +28,53 @@ function clamp(value: unknown, fallback: number, min: number, max: number): numb
 function revealAfterLoad(image: HTMLImageElement, src: string, reveal: () => void): void {
   image.onload = () => {
     image.hidden = false;
+    image.dataset.lastGoodSrc = image.currentSrc || image.src;
     reveal();
   };
-  image.onerror = () => { image.removeAttribute('src'); image.hidden = true; };
+  image.onerror = () => { if (image.dataset.lastGoodSrc && image.src !== image.dataset.lastGoodSrc) { image.src = image.dataset.lastGoodSrc; } else { image.removeAttribute('src'); image.hidden = true; } };
+  if (image.src === src && image.complete && image.naturalWidth > 0) { reveal(); return; }
   image.src = src;
   if (image.complete && image.naturalWidth > 0) image.onload?.(new Event('load'));
+}
+const STORAGE_KEY = 'jenny-public-branding-v1';
+const STORAGE_TTL = 30 * 24 * 60 * 60 * 1000;
+function savedBranding(): PublicBrand | null {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    const saved: { timestamp?: number; branding?: PublicBrand } = JSON.parse(raw);
+    if (!saved.timestamp || Date.now() - saved.timestamp > STORAGE_TTL) return null;
+    return saved.branding && typeof saved.branding === 'object' ? saved.branding : null;
+  } catch { return null; }
+}
+function saveBranding(branding: PublicBrand): void {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ timestamp: Date.now(), branding })); } catch { /* storage disabled */ }
 }
 let inFlight: Promise<PublicBrand | null> | null = null;
 async function currentBranding(): Promise<PublicBrand | null> {
   if (!inFlight) inFlight = (async () => {
     try {
       const response = await fetch(BOOKING_API + '/catalog', {
-        cache: 'no-store',
+        cache: 'default',
         credentials: 'omit',
         signal: AbortSignal.timeout(8000),
       });
-      if (!response.ok) return null;
+      if (!response.ok) return savedBranding();
       const payload: {branding?: PublicBrand} = await response.json();
-      return payload?.branding && typeof payload.branding === 'object' ? payload.branding : null;
-    } catch { return null; }
+      const branding = payload?.branding && typeof payload.branding === 'object' ? payload.branding : null;
+      if (branding) saveBranding(branding);
+      return branding || savedBranding();
+    } catch { return savedBranding(); }
   })();
   return inFlight;
 }
 export async function updateJennyBranding(): Promise<void> {
+  const cached = savedBranding();
+  if (cached) applyBranding(cached);
   const brand = await currentBranding();
-  if (!brand) return;
+  if (brand) applyBranding(brand);
+}
+function applyBranding(brand: PublicBrand): void {
   const headerSrc = mediaUrl(brand.logo_url);
   const headerImage = document.querySelector<HTMLImageElement>('[data-jenny-header-image]');
   const headerFallback = document.querySelector<HTMLElement>('[data-jenny-header-fallback]');
