@@ -26,16 +26,25 @@ function clamp(value: unknown, fallback: number, min: number, max: number): numb
   return Number.isFinite(number) ? Math.max(min, Math.min(max, number)) : fallback;
 }
 function revealAfterLoad(image: HTMLImageElement, src: string, reveal: () => void): void {
-  image.onload = () => {
+  // Keep the last successfully displayed photo visible while a replacement loads.
+  if (image.src === src && image.complete && image.naturalWidth > 0) {
     image.hidden = false;
-    image.dataset.lastGoodSrc = image.currentSrc || image.src;
+    reveal();
+    return;
+  }
+  const pending = new Image();
+  pending.decoding = 'async';
+  pending.onload = () => {
+    image.src = src;
+    image.hidden = false;
     reveal();
   };
-  image.onerror = () => { if (image.dataset.lastGoodSrc && image.src !== image.dataset.lastGoodSrc) { image.src = image.dataset.lastGoodSrc; } else { image.removeAttribute('src'); image.hidden = true; } };
-  if (image.src === src && image.complete && image.naturalWidth > 0) { reveal(); return; }
-  image.src = src;
-  if (image.complete && image.naturalWidth > 0) image.onload?.(new Event('load'));
+  pending.onerror = () => {
+    // Retain the previous photo, or the neutral/text fallback on first visit.
+  };
+  pending.src = src;
 }
+
 const STORAGE_KEY = 'jenny-public-branding-v1';
 const STORAGE_TTL = 30 * 24 * 60 * 60 * 1000;
 function savedBranding(): PublicBrand | null {
