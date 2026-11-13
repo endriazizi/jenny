@@ -114,7 +114,7 @@ function applyBranding(brand: PublicBrand): void {
     heroImage.style.objectPosition = x + '% ' + y + '%';
     heroImage.style.transform = 'scale(' + zoom / 100 + ')';
     revealAfterLoad(heroImage, heroSrc, () => {
-      if (heroFallback) heroFallback.hidden = true;
+      if (heroFallback) heroFallback.style.visibility = 'hidden';
     });
   }
 }
