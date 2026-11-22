@@ -14,7 +14,7 @@ const wa = waLink('Ciao Jenny! Ti scrivo per il mio appuntamento.');
     <div id="manage" data-api={BOOKING_API} aria-live="polite"><p class="muted">Carico l’appuntamento…</p></div>
     <noscript><p class="err">Per vedere l’appuntamento serve JavaScript.</p></noscript>
     <div id="email-update" class="card panel" style="margin-top:16px">
-      <h2>💌 Resta in contatto con Jenny</h2>
+      <h2>Resta in contatto con Jenny</h2>
       <p class="muted">Aggiungi o aggiorna la tua email per conferme e comunicazioni sui tuoi appuntamenti.</p>
       <form id="email-change-form">
         <label class="f">Indirizzo email
@@ -26,7 +26,7 @@ const wa = waLink('Ciao Jenny! Ti scrivo per il mio appuntamento.');
         </label>
         <label class="f" style="display:flex;align-items:flex-start;gap:8px">
           <input id="email-change-marketing" type="checkbox" />
-          <span>✨ Voglio ricevere novità, nuove nail art, promozioni e offerte riservate via email. Consenso facoltativo, revocabile in seguito.</span>
+          <span>Voglio ricevere novità, nuove nail art, promozioni e offerte riservate via email. Consenso facoltativo, revocabile in seguito.</span>
         </label>
         <button id="email-change-send" type="submit" class="btn btn-primary">Invia codice di verifica</button>
       </form>
@@ -36,7 +36,7 @@ const wa = waLink('Ciao Jenny! Ti scrivo per il mio appuntamento.');
         </label>
         <div class="actions">
           <button class="btn btn-primary" type="submit">Verifica e salva email</button>
-          <button class="btn btn-ghost" id="email-change-paste" type="button">📋 Incolla codice</button>
+          <button class="btn btn-ghost" id="email-change-paste" type="button">Incolla codice</button>
         </div>
       </form>
       <p id="email-change-feedback" class="muted" role="status" aria-live="polite"></p>
@@ -85,7 +85,7 @@ const wa = waLink('Ciao Jenny! Ti scrivo per il mio appuntamento.');
     button.disabled=true;emailFeedback.textContent='Invio del codice in corso…';
     try{
       await api(API,'/manage/email/start',{token,email:(document.getElementById('email-change-address') as HTMLInputElement).value,privacy_accepted:(document.getElementById('email-change-privacy') as HTMLInputElement).checked,marketing:(document.getElementById('email-change-marketing') as HTMLInputElement).checked});
-      emailFeedback.textContent='💌 Codice inviato. Controlla la posta e inseriscilo qui sotto.';
+      emailFeedback.textContent='Codice inviato. Controlla la posta e inseriscilo qui sotto.';
       emailVerify.hidden=false;
     }catch(e){emailFeedback.textContent=(e as Error).message;}finally{button.disabled=false;}
   });
@@ -95,7 +95,7 @@ const wa = waLink('Ciao Jenny! Ti scrivo per il mio appuntamento.');
     button.disabled=true;
     try{
       await api(API,'/manage/email/verify',{token,code:(document.getElementById('email-change-code') as HTMLInputElement).value.trim()});
-      emailFeedback.textContent='✅ Email verificata e salvata correttamente.';
+      emailFeedback.textContent='Email verificata e salvata correttamente.';
       emailVerify.hidden=true;emailForm.hidden=true;
     }catch(e){emailFeedback.textContent=(e as Error).message;}finally{button.disabled=false;}
   });

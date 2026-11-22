@@ -172,7 +172,7 @@ const steps = BOOKING_ONLINE ? [
 </Base>
 
 <style>
-  .hero { padding-block: 72px 88px; background: radial-gradient(1200px 520px at 85% 10%, var(--cipria) 0%, transparent 60%); overflow: hidden; }
+  .hero { padding-block: 72px 88px; background: var(--bianco); overflow: hidden; }
   .hero-in { display: grid; grid-template-columns: 1.1fr .9fr; gap: 48px; align-items: center; }
   .hero-txt { display: flex; flex-direction: column; gap: 20px; }
   h1 { font-size: clamp(42px, 7vw, 76px); }
@@ -195,7 +195,7 @@ const steps = BOOKING_ONLINE ? [
     box-shadow: inset -6px -8px 14px rgba(0, 0, 0, .08), inset 6px 8px 12px rgba(255, 255, 255, .45), 0 10px 20px rgba(45, 34, 38, .12);
   }
 
-  .hero-placeholder { width:100%; aspect-ratio:4/5; background:linear-gradient(145deg,var(--cipria),var(--cipria-2)); border-radius:inherit; }
+  .hero-placeholder { width:100%; aspect-ratio:4/5; background:var(--cipria); border-radius:inherit; }
   .tgrid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
   .tcard { display: flex; flex-direction: column; gap: 8px; padding: 24px; height: 100%; text-decoration: none; color: inherit; transition: border-color .15s, transform .15s; }
   .tcard:hover { border-color: var(--malva); color: inherit; transform: translateY(-2px); }
@@ -238,7 +238,7 @@ const steps = BOOKING_ONLINE ? [
   .faq details[open] summary :global(.chev) { transform: rotate(90deg); }
   .faq details p { padding: 0 22px 20px; }
 
-  .final { padding: 48px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 14px; background: linear-gradient(160deg, var(--bianco), var(--cipria)); }
+  .final { padding: 48px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 14px; background: var(--cipria); }
   .final .ctas { justify-content: center; margin-top: 8px; }
 
   @media (max-width: 899px) {

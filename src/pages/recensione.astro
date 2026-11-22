@@ -7,10 +7,10 @@ import { BOOKING_API } from '../data/booking';
   <section class="bk jn-review" id="review" data-api={BOOKING_API}>
     <p class="eyebrow">Jenny Nails Studio</p>
     <h1 class="title-lg">La tua <em>esperienza</em></h1>
-    <p class="review-lead">La tua opinione è preziosa. Come ti sei trovata da Jenny Nails Studio? ✨</p>
+    <p class="review-lead">La tua opinione è preziosa. Come ti sei trovata da Jenny Nails Studio?</p>
     <div class="card panel" id="review-view" aria-live="polite"><p>Caricamento…</p></div>
     <div class="card panel review-email" id="review-email" hidden>
-      <h2>💌 Resta in contatto con Jenny</h2>
+      <h2>Resta in contatto con Jenny</h2>
       <p class="muted">Aggiungi la tua email per conferme e comunicazioni sui tuoi appuntamenti.</p>
       <form id="review-email-form" class="review-form">
         <label class="f">Indirizzo email
@@ -22,7 +22,7 @@ import { BOOKING_API } from '../data/booking';
         </label>
         <label class="review-email-check">
           <input id="review-email-marketing" type="checkbox" />
-          <span>✨ Voglio ricevere novità, nuove nail art, promozioni e offerte riservate via email. Consenso facoltativo, revocabile in seguito.</span>
+          <span>Voglio ricevere novità, nuove nail art, promozioni e offerte riservate via email. Consenso facoltativo, revocabile in seguito.</span>
         </label>
         <button type="submit" class="btn btn-primary">Invia codice di verifica</button>
       </form>
@@ -32,7 +32,7 @@ import { BOOKING_API } from '../data/booking';
         </label>
         <div class="actions">
           <button class="btn btn-primary" type="submit">Verifica e salva email</button>
-          <button class="btn btn-ghost" id="review-email-paste" type="button">📋 Incolla codice</button>
+          <button class="btn btn-ghost" id="review-email-paste" type="button">Incolla codice</button>
           <button class="btn btn-ghost" id="review-email-edit" type="button">Correggi email / reinvia codice</button>
         </div>
       </form>
@@ -71,7 +71,7 @@ import { BOOKING_API } from '../data/booking';
         marketing: (document.getElementById('review-email-marketing') as HTMLInputElement).checked,
       });
       emailForm.hidden = true; verifyForm.hidden = false; codeInput.value = '';
-      emailStatus.textContent = '💌 Codice inviato! Controlla la posta: è valido per 10 minuti.';
+      emailStatus.textContent = 'Codice inviato! Controlla la posta: è valido per 10 minuti.';
       codeInput.focus();
     } catch (error) { emailFailure(error); }
     finally { emailBusy = false; button.disabled = false; }
@@ -85,14 +85,14 @@ import { BOOKING_API } from '../data/booking';
     try {
       await api(base, '/reviews/email/verify', { token, code: codeInput.value.trim() });
       verifyForm.hidden = true;
-      emailStatus.textContent = '✅ Email verificata e salvata. Grazie di cuore! 💗';
+      emailStatus.textContent = 'Email verificata e salvata. Grazie di cuore!';
     } catch (error) {
       // Restore completion if the response was lost after the server saved.
       try {
         const saved = await api<{ email_missing?: boolean }>(base, '/reviews/landing', { token });
         if (saved.email_missing === false) {
           verifyForm.hidden = true; emailForm.hidden = true;
-          emailStatus.textContent = '✅ La tua email è già salvata.';
+          emailStatus.textContent = 'La tua email è già salvata.';
           return;
         }
       } catch { /* Preserve the original error. */ }
@@ -118,7 +118,7 @@ import { BOOKING_API } from '../data/booking';
       let googleAvailable = state.google_available !== false;
       const feedbackBox = h('div', { class: 'review-private' });
       function thankYou(rating: number) {
-        const heading = h('h2', {}, 'Grazie per il tuo feedback! 💗');
+        const heading = h('h2', {}, 'Grazie per il tuo feedback!');
         const saved = h('p', {}, 'La tua valutazione privata è stata registrata. Leggeremo con attenzione il tuo messaggio.');
         if (rating === 5 && googleAvailable) {
           view.replaceChildren(h('p', { role: 'status' }, 'Apro Google…'));
@@ -160,7 +160,7 @@ import { BOOKING_API } from '../data/booking';
           feedbackBox.replaceChildren(h('p', { role: 'status' }, 'Apro Google…'));
         } else {
           submit.textContent = 'Invia feedback privato';
-          feedbackBox.replaceChildren(h('h2', {}, 'Un messaggio solo per noi 💗'),
+          feedbackBox.replaceChildren(h('h2', {}, 'Un messaggio solo per noi'),
             h('p', {}, 'Condividi la tua esperienza con il salone. La valutazione e il commento restano privati.'), privateFields);
         }
       }

@@ -29,7 +29,7 @@ import { BOOKING_API } from '../../data/booking';
     <button id="gallery-prev" class="arrow" type="button" aria-label="Foto precedente">‹</button>
     <img id="gallery-large" alt="" />
     <button id="gallery-next" class="arrow" type="button" aria-label="Foto successiva">›</button>
-    <div class="viewer-social"><p id="gallery-caption"></p><button id="gallery-copy" type="button">📋 Copia caption</button><a id="gallery-share" target="_blank" rel="noopener noreferrer" href="#">🔗 Condividi</a></div>
+    <div class="viewer-social"><p id="gallery-caption"></p><button id="gallery-copy" type="button">Copia caption</button><a id="gallery-share" target="_blank" rel="noopener noreferrer" href="#">Condividi</a></div>
   </dialog>
 </Base>
 <style>
@@ -101,7 +101,7 @@ import { BOOKING_API } from '../../data/booking';
     copy.hidden=!all[active].caption;counter.textContent=(active+1)+' / '+all.length;
     if(!dialog.open)dialog.showModal();
   }
-  copy.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(all[active].caption||all[active].alt);copy.textContent='✅ Copiato';setTimeout(()=>copy.textContent='📋 Copia caption',1800)}catch{copy.textContent='Seleziona il testo per copiarlo'}});
+  copy.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(all[active].caption||all[active].alt);copy.textContent='Copiato';setTimeout(()=>copy.textContent='Copia caption',1800)}catch{copy.textContent='Seleziona il testo per copiarlo'}});
   const requestedPhoto=new URLSearchParams(location.search).get('foto');
   document.getElementById('gallery-close').onclick=()=>dialog.close();
   document.getElementById('gallery-prev').onclick=()=>show(active-1);

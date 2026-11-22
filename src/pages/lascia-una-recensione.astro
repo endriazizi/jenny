@@ -6,12 +6,12 @@ import { BOOKING_API } from '../data/booking';
 <Base title="Lascia una recensione · Jenny Nails Studio" description="Raccontaci la tua esperienza da Jenny Nails Studio. Un messaggio solo per noi, con il cuore." noindex hideActionBar>
   <section class="bk public-review" id="public-review" data-api={BOOKING_API}>
     <p class="eyebrow">Jenny Nails Studio</p>
-    <h1 class="title-lg">La tua opinione <em>conta</em> 💗</h1>
-    <p class="intro">Un piccolo momento per raccontarci come ti sei trovata. Il tuo messaggio arriva direttamente a Jenny e ci aiuta a prenderci cura di ogni dettaglio. ✨</p>
+    <h1 class="title-lg">La tua opinione <em>conta</em></h1>
+    <p class="intro">Un piccolo momento per raccontarci come ti sei trovata. Il tuo messaggio arriva direttamente a Jenny e ci aiuta a prenderci cura di ogni dettaglio.</p>
     <div class="card panel">
       <form id="public-review-form">
         <div id="contact-step">
-          <h2>Prima, presentiamoci 💅</h2>
+          <h2>Prima, presentiamoci</h2>
           <p class="small muted">Nome, cognome e telefono ci aiutano ad associare il messaggio alla cliente. La data di nascita è facoltativa.</p>
           <div class="contact-grid">
             <label class="f">Nome<input type="text" name="first_name" autocomplete="given-name" maxlength="80" required /></label>
@@ -20,11 +20,11 @@ import { BOOKING_API } from '../data/booking';
             <label class="f">Data di nascita (facoltativa)<input name="birth_date" type="text" inputmode="numeric" autocomplete="bday" placeholder="gg/mm/aaaa" maxlength="10" aria-describedby="birth-help birth-error" /><small id="birth-help" class="muted">Giorno / mese / anno</small><small id="birth-error" class="err" aria-live="polite"></small></label>
           </div>
           <label class="choice"><input name="privacy_notice" type="checkbox" required /><span>Ho letto l’<a href="/privacy/#recensioni" target="_blank" rel="noopener">informativa privacy</a> sul trattamento dei dati per gestire il mio feedback.</span></label>
-          <label class="choice"><input name="marketing_consent" type="checkbox" /><span>Mi fa piacere ricevere novità, iniziative e offerte di <strong>Jenny Nails Studio</strong> al numero indicato, anche su WhatsApp. 💗 <small>Facoltativo: posso revocare il consenso quando voglio. Posso lasciare il feedback anche senza aderire.</small></span></label>
-          <button class="btn btn-primary" id="continue-review" type="button">Continua · raccontaci la tua esperienza ✨</button>
+          <label class="choice"><input name="marketing_consent" type="checkbox" /><span>Mi fa piacere ricevere novità, iniziative e offerte di <strong>Jenny Nails Studio</strong> al numero indicato, anche su WhatsApp. <small>Facoltativo: posso revocare il consenso quando voglio. Posso lasciare il feedback anche senza aderire.</small></span></label>
+          <button class="btn btn-primary" id="continue-review" type="button">Continua · raccontaci la tua esperienza</button>
         </div>
         <div id="feedback-step" hidden>
-          <h2 id="feedback-title" tabindex="-1">Come ti sei trovata? ✨</h2>
+          <h2 id="feedback-title" tabindex="-1">Come ti sei trovata?</h2>
           <p class="small muted">Con 5 stelle si apre direttamente Google. Da 1 a 4 stelle puoi inviare un messaggio privato a Jenny.</p>
           <fieldset>
             <legend>La tua valutazione</legend>
@@ -34,9 +34,9 @@ import { BOOKING_API } from '../data/booking';
           </fieldset>
           <p class="rating-label" id="public-rating-label" role="status">Seleziona da 1 a 5 stelle</p>
           <div id="private-feedback" hidden>
-          <label class="f">Un messaggio solo per noi (facoltativo)<textarea name="text" rows="4" maxlength="2000" placeholder="Cosa ti è piaciuto? C’è un dettaglio che possiamo migliorare? 💗"></textarea></label>
+          <label class="f">Un messaggio solo per noi (facoltativo)<textarea name="text" rows="4" maxlength="2000" placeholder="Cosa ti è piaciuto? C’è un dettaglio che possiamo migliorare?"></textarea></label>
           <p class="small muted">Non inserire informazioni sensibili o dati di altre persone.</p>
-          <button class="btn btn-primary" id="submit-review" type="submit">Invia il tuo feedback privato 💗</button>
+          <button class="btn btn-primary" id="submit-review" type="submit">Invia il tuo feedback privato</button>
           </div>
           <button class="btn btn-ghost" id="back-contact" type="button">Torna ai tuoi dati</button>
         </div>
@@ -113,7 +113,7 @@ import { BOOKING_API } from '../data/booking';
     radios.forEach((radio,i) => radio.parentElement?.classList.toggle('selected',i < rating));
     document.getElementById('public-rating-label')!.textContent = rating + '/5 · ' + ['','Da migliorare','Non del tutto soddisfatta','Discreta','Molto positiva','Fantastica!'][rating];
     privateFeedback.hidden = rating === 5;
-    submit.textContent = 'Invia il tuo feedback privato 💗';
+    submit.textContent = 'Invia il tuo feedback privato';
     status.textContent = '';
     if (rating === 5) void saveFeedback();
   }));
@@ -125,7 +125,7 @@ import { BOOKING_API } from '../data/booking';
     if (saving) return;
     if (feedback.hidden) { document.getElementById('continue-review')!.click(); return; }
     const rating = Number(radios.find(r => r.checked)?.value || 0);
-    if (!rating) { status.textContent = 'Scegli le stelle prima di inviare. 💗'; radios[0].focus(); return; }
+    if (!rating) { status.textContent = 'Scegli le stelle prima di inviare.'; radios[0].focus(); return; }
     if (!validateBirth(true) || !form.checkValidity()) { feedback.hidden = true; contacts.hidden = false; form.reportValidity(); return; }
     saving = true; submit.disabled = true;
     radios.forEach(r => { r.disabled = true; });
@@ -151,7 +151,7 @@ import { BOOKING_API } from '../data/booking';
       radios.forEach(r => { r.disabled = false; });
       // Keep a retry action available when the initial five-star save fails.
       privateFeedback.hidden = false;
-      submit.textContent = rating === 5 ? 'Riprova ad aprire Google' : 'Invia il tuo feedback privato 💗';
+      submit.textContent = rating === 5 ? 'Riprova ad aprire Google' : 'Invia il tuo feedback privato';
     }
   }
 </script>
